@@ -16,7 +16,7 @@ import (
 	httprouter "github.com/julienschmidt/httprouter"
 	bluemonday "github.com/microcosm-cc/bluemonday"
 	stripe "github.com/stripe/stripe-go"
-	blackfriday "gopkg.in/russross/blackfriday.v2"
+	blackfriday "github.com/russross/blackfriday/v2"
 )
 
 var (
