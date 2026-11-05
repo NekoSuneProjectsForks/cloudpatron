@@ -30,7 +30,7 @@
                         <a class="backlink" href="{{$.Backlink}}"><i class="large orange home icon"></i></a>
                     {{end}}
                 {{end}}
-                <a href="/" class="brandlink header-brand">CLOUD PATRON</a>
+                <a href="/" class="brandlink header-brand">NekoSune Patron</a>
                 {{if hasprefix $.Section "admin/"}}
                     <a href="/admin" class="ui large right floated orange basic button">Admin</a>
                 {{else}}
@@ -49,6 +49,8 @@
                             <a class="{{if hasprefix $.Section "admin/posts"}}active{{end}} item" href="/admin/posts">Posts</a>
                             <a class="{{if hasprefix $.Section "admin/levels"}}active{{end}} item" href="/admin/levels">Levels</a>
                             <a class="{{if hasprefix $.Section "admin/goals"}}active{{end}} item" href="/admin/goals">Goals</a>
+                            <a class="item" href="/creator-studio">Creator Studio</a>
+                            <a class="item" href="/shop?creatorId=nekosune">Shop</a>
                         </div>
                     </div>
                 </div>
@@ -68,6 +70,7 @@
                             <a class="{{if hasprefix $.Section "patron/index"}}active{{end}} item" href="/patron">My Account</a>
                             <a class="{{if hasprefix $.Section "patron/support"}}active{{end}} item" href="/patron/support">Support Level</a>
                             <a class="{{if hasprefix $.Section "patron/payments"}}active{{end}} item" href="/patron/payments">Payments</a>
+                            <a class="item" href="/shop?creatorId=nekosune">Shop</a>
                         </div>
                     </div>
                 </div>
