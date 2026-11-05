@@ -3,7 +3,15 @@
 
 <div class="ui container">
     <div class="ui padded segment">
-        <div class="ui huge orange dividing header">Dashboard</div>
+        <div class="ns-eyebrow">CREATOR COMMAND CENTRE</div>
+        <div class="ui huge orange dividing header">Creator overview</div>
+        <p class="ns-hint">Manage your audience, publishing, subscriptions and payout integrations from one place.</p>
+        <div class="ns-dashboard-actions">
+          <a href="/creator-studio" class="ns-action primary">Open Creator Studio</a>
+          <a href="/payment-settings" class="ns-action secondary">Payment gateways</a>
+          <a href="/admin/patrons" class="ns-action secondary">Manage supporters</a>
+          <a href="/admin/posts" class="ns-action secondary">Publish posts</a>
+        </div>
         <div class="ui hidden divider"></div>
 
         <div class="ui three column stackable grid">
@@ -114,7 +122,8 @@
             <div class="ui hidden divider"></div>
         {{end}}
 
-        <form class="ui huge form" action="/admin/edit" method="POST" enctype="multipart/form-data">
+        <div class="ns-section-head"><div><div class="ns-eyebrow">BRANDING & INTEGRATIONS</div><h2>Platform configuration</h2><p>Configure your public profile, mail server, legacy Stripe billing and domain.</p></div></div>
+        <form id="platform-settings" class="ui huge form" action="/admin/edit" method="POST" enctype="multipart/form-data">
             <div class="ui dividing orange header">Project Info</div>
             <div class="ui message">
                 <i class="info circle grey icon"></i>Describe your project to visitors of your page.
