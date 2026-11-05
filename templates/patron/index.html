@@ -1,94 +1,32 @@
 {{template "header.html" .}}
-
-<div class="ui container">
-    <div class="ui padded segment">
-
-        {{with $error := $.Request.FormValue "error"}}
-            <div class="ui large negative message">
-                <div class="content">
-                    <div class="header">
-                        {{if eq $error "changes"}}
-                            Saving changes failed
-                        {{else}}
-                            Error
-                        {{end}}
-                    </div>
-                    <a class="close-link" href="/patron"><i class="close icon"></i></a>
-                </div>
-            </div>
-            <div class="ui hidden divider"></div>
-        {{end}}
-        {{with $success := $.Request.FormValue "success"}}
-            <div class="ui large info message">
-                <div class="content">
-                    <div class="header">
-                        {{if eq $success "changes"}}
-                            Changes saved successfully
-                        {{else}}
-                            Success
-                        {{end}}
-                    </div>
-                    <a class="close-link" href="/patron"><i class="close icon"></i></a>
-                </div>
-            </div>
-            <div class="ui hidden divider"></div>
-        {{end}}
-
-        <div class="ui huge dividing orange header">My Account</div>
-        <div class="ui hidden divider"></div>
-        <form class="ui huge form" action="/patron/edit" method="POST">
-            <div class="field">
-                <div class="ui small header">First Name</div>
-                <input name="first_name" type="text" placeholder="First Name" value="{{$.Patron.FirstName}}">
-            </div>
-            <div class="field">
-                <div class="ui small header">Last Name</div>
-                <input name="last_name" type="text" placeholder="Last Name" value="{{$.Patron.LastName}}">
-            </div>
-            <div class="field">
-                <div class="ui small header">Email Address</div>
-                <input name="email" type="email" placeholder="Email Address" value="{{$.Patron.Email}}">
-            </div>
-            <div class="equal width fields">
-                <div class="field mobile hidden"></div>
-                <div class="field mobile hidden"></div>
-                <div class="field">
-                    <button type="submit" class="ui huge fluid orange button">Save Changes</button>
-                </div>
-            </div>
-        </form>
+<div class="ns-section-head"><div><div class="ns-eyebrow">MY MEMBERSHIP</div><h2>Account settings</h2><p>Manage your profile, security and membership details.</p></div><a href="/patron/support" class="ns-action secondary">Manage membership</a></div>
+<div class="ns-settings-grid">
+<section class="ui padded segment">
+  <div class="ui large dividing header">Personal information</div>
+  <p class="ns-hint">These details are associated with your supporter account.</p>
+  {{with $.Request.FormValue "success"}}<div class="ui positive message">Changes saved successfully.</div>{{end}}
+  {{with $.Request.FormValue "error"}}<div class="ui negative message">Unable to save changes. Check your details.</div>{{end}}
+  <form class="ui form" action="/patron/edit" method="POST">
+    <div class="two fields">
+    <div class="field"><label for="first-name">First name</label><input id="first-name" name="first_name" type="text" autocomplete="given-name" value="{{$.Patron.FirstName}}" required></div>
+    <div class="field"><label for="last-name">Last name</label><input id="last-name" name="last_name" type="text" autocomplete="family-name" value="{{$.Patron.LastName}}" required></div>
     </div>
+    <div class="field"><label for="account-email">Email address</label><input id="account-email" name="email" type="email" autocomplete="email" value="{{$.Patron.Email}}" required></div>
+    <button class="ui orange button" type="submit">Save profile</button>
+  </form>
+</section>
+<section class="ui padded segment">
+  <div class="ui large dividing header">Account security</div>
+  <p class="ns-hint">Change your password to keep your account protected.</p>
+  <form class="ui form" action="/patron/password" method="POST" autocomplete="off">
+    <div class="field"><label for="current-password">Current password</label><input id="current-password" name="current_password" type="password" autocomplete="current-password" required></div>
+    <div class="field"><label for="new-password">New password</label><input id="new-password" name="new_password" type="password" autocomplete="new-password" minlength="6" required></div>
+    <button class="ui basic button" type="submit">Update password</button>
+  </form>
+  <div class="ui divider"></div>
+  <p class="ns-hint">Looking for your purchases or paid membership?</p>
+  <p><a href="/patron/payments">View payment history →</a></p><p><a href="/shop?creatorId=nekosune">Explore the creator shop →</a></p>
+</section>
 </div>
-
-<div class="ui hidden divider"></div>
-
-<div class="ui container">
-    <div class="ui padded segment">
-        <div class="ui huge orange dividing header">Change Password</div>
-
-        <form class="ui huge form" action="/patron/password" method="POST" novalidate autocomplete="off">
-            <div class="equal width fields">
-                <div class="field">
-                    <input name="current_password" type="password" placeholder="Current Password" value="">
-                </div>
-                <div class="field">
-                    <input name="new_password" type="password" placeholder="New Password" value="">
-                </div>
-                <div class="field">
-                    <button type="submit" class="ui huge fluid basic button">Change Password</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="ui hidden divider"></div>
-
-<div class="ui container">
-    <div class="ui padded segment">
-        <a href="/signout" class="ui large right floated basic button confirm" data-prompt="Sign out?">Sign Out</a>
-        <div class="ui hidden divider"></div>
-    </div>
-</div>
-
+<section class="ns-signout-panel"><span>Finished using your account?</span><a class="ns-action secondary confirm" href="/signout" data-prompt="Sign out?">Sign out</a></section>
 {{template "footer.html" .}}

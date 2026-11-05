@@ -1,0 +1,48 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Payment Gateways · NekoSune Studio</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#f2f9f3;background:#0a100d;color-scheme:dark}*{box-sizing:border-box}body{margin:0}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}aside{background:#101a13;border-right:1px solid #2c4535;padding:30px 17px}
+.brand{font-size:20px;font-weight:800;color:#a9ffc6;margin:0 10px 40px}nav a{display:block;padding:13px 15px;text-decoration:none;color:#b4c7b9;border-radius:12px;margin:3px 0}nav a:hover,nav .active{background:#23402d;color:#fff}
+main{max-width:1300px;width:100%;padding:38px 44px;margin:0 auto}h1{font-size:36px;margin:5px 0}h2{font-size:19px;margin:0}p{color:#a4b6a9;line-height:1.6}
+.tag{font-size:12px;color:#84eeb0;text-transform:uppercase;letter-spacing:2px;font-weight:750}.notice{margin:24px 0;padding:14px 18px;border:1px solid #3b6148;background:#182a1e;border-radius:12px;color:#c3edcb;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;margin-top:22px}
+.card{background:#141f17;border:1px solid #2e4635;border-radius:18px;padding:21px}.cardhead{display:flex;justify-content:space-between;align-items:center;gap:10px}.status{color:#c9d7cf;background:#303b33;border-radius:30px;padding:6px 10px;font-size:11px}.status.ready{color:#b1ffcf;background:#215b38}
+label{display:block;color:#a4b9ab;font-size:12px;margin:17px 0 5px}input{width:100%;border:1px solid #39563e;background:#0c140f;color:#fff;border-radius:10px;padding:12px;font:inherit}
+.help{font-size:11px;color:#819b89}.controls{display:flex;gap:10px;margin-top:20px}
+button{border:0;border-radius:10px;background:#7ceda6;color:#122519;padding:11px 16px;font-weight:800;cursor:pointer}
+.secondary{background:#293d2e;color:#cdecd2}button:focus-visible,input:focus-visible{outline:2px solid #91ffc0}
+#message{font-size:13px;color:#b4d1b8;margin-top:10px;min-height:20px}
+@media(max-width:800px){.layout{display:block}aside{padding:16px}nav{display:flex;overflow:auto}.brand{margin:0 0 14px}nav a{white-space:nowrap}main{padding:22px 16px}}
+</style></head><body><div class="layout">
+<aside><div class="brand">✦ NekoSune Studio</div><nav><a href="/admin">Overview</a><a href="/creator-studio">Creator Studio</a><a class="active" href="/payment-settings">Payment Gateways</a><a href="/shop?creatorId=nekosune">Storefront</a><a href="/admin/patrons">Audience</a><a href="/">Public page</a></nav></aside>
+<main><div class="tag">Creator settings / payments</div><h1>Payment gateways</h1><p>Connect your payment providers without editing environment variables. Secret credentials are encrypted at rest on your server and are never sent back to your browser.</p>
+<div class="notice"><strong>Gateway readiness:</strong> Heleket is wired to the new checkout and verified callbacks. Stripe remains configured through the original CloudPatron Admin page for legacy recurring billing. Other gateway settings can be saved here, but those providers are not yet connected to payment processing. Never enter blockchain wallet private keys. The encryption key and vault file must both be backed up securely.</div>
+<div id="message" role="status">Checking administrator session…</div><div id="grid" class="grid"></div>
+</main></div>
+<script type="module">
+const grid=document.getElementById('grid'),msg=document.getElementById('message');let csrf='';
+const names={stripe:'Stripe',paypal:'PayPal',nowpayments:'NOWPayments',zbd:'ZBD',heleket:'Heleket',cryptomus:'Cryptomus',bitpay:'BitPay',coingate:'CoinGate',oxapay:'OxaPay',plisio:'Plisio',opennode:'OpenNode',strike:'Strike',alby:'Alby',speed:'Speed',checkoutcom:'Checkout.com',revolut:'Revolut Pay',hive:'HIVE',hbd:'HBD',steem:'STEEM',sbd:'SBD',blurt:'BLURT',telos:'TELOS',eos:'EOS',fio:'FIO',wax:'WAX',pivx:'PIVX',fls:'FLS'};
+const pretty=s=>s.replace(/([A-Z])/g,' $1').replace(/^./,v=>v.toUpperCase());
+async function request(path,body){const r=await fetch(path,{credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json','x-csrf-token':csrf},...(body?{method:'POST',body:JSON.stringify(body)}:{})});const json=await r.json();if(!r.ok)throw Error(json.error||'Unable to save');return json;}
+function render(gateways){grid.replaceChildren();for(const gateway of gateways){
+ const card=document.createElement('section');card.className='card';
+ const head=document.createElement('div');head.className='cardhead';
+ const title=document.createElement('h2');title.textContent=names[gateway.id]||gateway.id;
+ const status=document.createElement('span');status.className='status'+(gateway.configured?' ready':'');status.textContent=gateway.configured?'Credentials saved':'Not configured';head.append(title,status);card.append(head);
+ const note=document.createElement('p');note.className='help';note.textContent=gateway.id==='heleket'?'Checkout + verified webhook integration':gateway.id==='stripe'?'Legacy Stripe billing uses Admin → Project settings':gateway.fields.some(f=>f.name==='receivingAccount'||f.name==='receivingAddress')?'Receive-only wallet settings; on-chain verification planned':'Credentials only; checkout integration planned';card.append(note);
+ const form=document.createElement('form');form.autocomplete='off';
+ for(const field of gateway.fields){
+  const label=document.createElement('label');label.textContent=pretty(field.name);const input=document.createElement('input');input.name=field.name;input.type=field.secret?'password':'text';input.maxLength=8192;input.autocomplete='new-password';input.placeholder=field.configured?(field.secret?'Saved securely · enter to replace':'Configured'):'Enter '+pretty(field.name);if(field.value)input.value=field.value;
+  label.append(input);form.append(label);
+  if(field.secret&&field.configured){const hint=document.createElement('div');hint.className='help';hint.textContent='Leave blank to keep the saved secret';form.append(hint);}
+ }
+ const controls=document.createElement('div');controls.className='controls';
+ const button=document.createElement('button');button.type='submit';button.textContent='Save credentials';
+ const clear=document.createElement('button');clear.type='button';clear.className='secondary';clear.textContent='Clear credentials';
+ clear.addEventListener('click',async()=>{if(!confirm('Delete saved credentials for '+title.textContent+'?'))return;try{const data=await request('/creator-api/gateways/'+gateway.id,{remove:gateway.fields.map(x=>x.name),values:{}});gateway.configured=false;render(gateways.map(x=>x.id===gateway.id?data.gateway:x));msg.textContent=title.textContent+' credentials cleared.';}catch(e){msg.textContent=e.message;}});
+ controls.append(button,clear);form.append(controls);
+ form.addEventListener('submit',async e=>{e.preventDefault();const values={};for(const field of gateway.fields){const value=form.elements.namedItem(field.name).value.trim();if(value)values[field.name]=value;}try{const data=await request('/creator-api/gateways/'+gateway.id,{values});render(gateways.map(x=>x.id===gateway.id?data.gateway:x));msg.textContent=title.textContent+' settings saved.';}catch(err){msg.textContent='Save failed: '+err.message;}});
+ card.append(form);grid.append(card);
+}}
+try{const session=await(await fetch('/creator-session',{credentials:'same-origin',cache:'no-store'})).json();if(!session.admin||!session.csrf)throw Error('Administrator sign-in required');csrf=session.csrf;const data=await request('/creator-api/gateways');render(data.gateways);msg.textContent='Connected securely to creator settings.';}catch(e){msg.textContent=e.message;}
+</script></body></html>

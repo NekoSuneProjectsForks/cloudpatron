@@ -663,6 +663,10 @@ func adminEditHandler(w *Web) {
 
 	stripePublishableKey := strings.TrimSpace(w.r.FormValue("stripe_publishable_key"))
 	stripeSecretKey := strings.TrimSpace(w.r.FormValue("stripe_secret_key"))
+	// Blank password and secret fields preserve existing credentials.
+	existingInfo := database.FindInfo()
+	if stripeSecretKey == "" { stripeSecretKey = existingInfo.Stripe.SecretKey }
+	if mailPassword == "" { mailPassword = existingInfo.Mail.Password }
 
 	domain := strings.TrimSpace(w.r.FormValue("domain"))
 	domain = strings.TrimPrefix(domain, "http://")

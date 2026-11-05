@@ -225,6 +225,7 @@ func main() {
 	// NekoSune integrated creator features (same signed Go session for gift claims and admin).
 	r.GET("/shop", shopPage)
 	r.GET("/creator-studio", creatorStudioPage)
+	r.GET("/payment-settings", gatewaySettingsPage)
 	r.GET("/creator-session", bridgeSessionAPI)
 	r.GET("/patron-session", bridgeSessionAPI)
 	r.GET("/v1/public/*path", bridgePublicProxy)

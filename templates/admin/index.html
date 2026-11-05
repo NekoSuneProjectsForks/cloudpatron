@@ -3,7 +3,15 @@
 
 <div class="ui container">
     <div class="ui padded segment">
-        <div class="ui huge orange dividing header">Dashboard</div>
+        <div class="ns-eyebrow">CREATOR COMMAND CENTRE</div>
+        <div class="ui huge orange dividing header">Creator overview</div>
+        <p class="ns-hint">Manage your audience, publishing, subscriptions and payout integrations from one place.</p>
+        <div class="ns-dashboard-actions">
+          <a href="/creator-studio" class="ns-action primary">Open Creator Studio</a>
+          <a href="/payment-settings" class="ns-action secondary">Payment gateways</a>
+          <a href="/admin/patrons" class="ns-action secondary">Manage supporters</a>
+          <a href="/admin/posts" class="ns-action secondary">Publish posts</a>
+        </div>
         <div class="ui hidden divider"></div>
 
         <div class="ui three column stackable grid">
@@ -114,7 +122,8 @@
             <div class="ui hidden divider"></div>
         {{end}}
 
-        <form class="ui huge form" action="/admin/edit" method="POST" enctype="multipart/form-data">
+        <div class="ns-section-head"><div><div class="ns-eyebrow">BRANDING & INTEGRATIONS</div><h2>Platform configuration</h2><p>Configure your public profile, mail server, legacy Stripe billing and domain.</p></div></div>
+        <form id="platform-settings" class="ui huge form" action="/admin/edit" method="POST" enctype="multipart/form-data">
             <div class="ui dividing orange header">Project Info</div>
             <div class="ui message">
                 <i class="info circle grey icon"></i>Describe your project to visitors of your page.
@@ -217,12 +226,14 @@
                 </div>
                 <div class="{{if not $.Info.Mail.Password}}error{{end}} field">
                     <div class="ui small header">Mail Password</div>
-                    <input name="mail_password" type="text" value="{{$.Info.Mail.Password}}" placeholder="">
+                    <input name="mail_password" type="password" value="" autocomplete="new-password" placeholder="{{if $.Info.Mail.Password}}Configured · leave blank to keep password{{else}}Enter SMTP password{{end}}">
                 </div>
             </div>
 
             <div class="ui hidden divider"></div>
             <div class="ui dividing orange header">Stripe Payments API</div>
+            <p><a href="/payment-settings" class="ui basic green button">Manage all payment gateways</a></p>
+            <p class="ns-hint">Legacy Stripe monthly payments still use these credentials. Secret fields stay hidden when editing this form.</p>
             <div class="ui message">
                 <i class="info circle grey icon"></i>Add your Stripe API information to enable credit card processing. Don't have an account? <a target="_blank" href="https://stripe.com">Sign up on Stripe</a>.
             </div>
@@ -234,7 +245,7 @@
                 </div>
                 <div class="{{if not $.Info.Stripe.SecretKey}}error{{end}} field">
                     <div class="ui small header">Stripe Secret Key</div>
-                    <input name="stripe_secret_key" type="text" value="{{$.Info.Stripe.SecretKey}}" placeholder="e.g. sk_live_sohsoo0quewizaoku9sha7Ei">
+                    <input name="stripe_secret_key" type="password" value="" autocomplete="new-password" placeholder="{{if $.Info.Stripe.SecretKey}}Configured · leave blank to keep current secret{{else}}Enter Stripe secret key{{end}}">
                 </div>
             </div>
 
