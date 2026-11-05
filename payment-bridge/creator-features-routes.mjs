@@ -11,6 +11,13 @@ function response(res,status,obj){res.writeHead(status,{'content-type':'applicat
 export async function creatorFeatureRoute(req,res,url,{state,persist,admin,project}) {
   const path=url.pathname;
   const creatorId=url.searchParams.get('creatorId');
+  if(req.method==='GET' && path.startsWith('/v1/public/gifts/')) {
+    const code=path.slice('/v1/public/gifts/'.length);
+    if(!/^[A-Za-z0-9]{8,64}$/.test(code)){response(res,404,{error:'not_found'});return true;}
+    const gift=state.gifts?.[codeHash(code)];
+    if(!gift || gift.revoked || Date.parse(gift.expiresAt)<=Date.now() || gift.redemptions.length>=gift.maxRedemptions) {response(res,404,{error:'gift_unavailable'});return true;}
+    response(res,200,{creatorId:gift.creatorId,tierId:gift.tierId,durationDays:gift.durationDays,remaining:gift.maxRedemptions-gift.redemptions.length,expiresAt:gift.expiresAt});return true;
+  }
   if(req.method==='GET'&&path==='/v1/public/posts') {
     if(!validId(creatorId)){response(res,400,{error:'invalid_creator'});return true;}
     const posts=Object.values(state.posts||{}).filter(p=>p.creatorId===creatorId&&p.published).map(p=>publicPost(p,p.access==='free'));
@@ -62,7 +69,7 @@ export async function creatorFeatureRoute(req,res,url,{state,persist,admin,proje
     const code=createGiftCode(), hash=codeHash(code);
     state.gifts??={};state.gifts[hash]=gift;
     try{await persist();}catch{delete state.gifts[hash];response(res,500,{error:'persistence_failed'});return true;}
-    response(res,201,{code,redeemPath:'/redeem/'+code,redeemUiReady:false,expiresAt:gift.expiresAt,maxRedemptions:gift.maxRedemptions});return true;
+    response(res,201,{code,redeemPath:'/redeem/'+code,redeemUiReady:true,expiresAt:gift.expiresAt,maxRedemptions:gift.maxRedemptions});return true;
   }
   if(req.method==='POST'&&path==='/v1/admin/creator/gifts/redeem') {
     let body;try{body=await jsonBody(req);}catch{response(res,400,{error:'invalid_json'});return true;}
