@@ -50,9 +50,11 @@ export async function creatorFeatureRoute(req,res,url,{state,persist,admin,proje
   }
   if(req.method==='POST'&&path==='/v1/admin/creator/posts') {
     let post;try{post=validatePost(await jsonBody(req));}catch(e){response(res,400,{error:e.message});return true;}
-    state.posts??={};const old=state.posts[post.id];if(old){post.createdAt=old.createdAt;}
+    state.posts??={};state.products??={};const old=state.posts[post.id];const productId='post_'+post.id;const oldProduct=state.products[productId];if(old){post.createdAt=old.createdAt;}
     state.posts[post.id]=post;
-    try{await persist();}catch{if(old)state.posts[post.id]=old;else delete state.posts[post.id];response(res,500,{error:'persistence_failed'});return true;}
+    if(['one_time','members_or_purchase'].includes(post.access)) state.products[productId]={id:productId,creatorId:post.creatorId,title:post.title,description:post.excerpt,kind:'post',billing:'one_time',price:post.price,currency:post.currency,assetId:null,requiredTierId:null,youtubeEmbedUrl:null,published:post.published};
+    else delete state.products[productId];
+    try{await persist();}catch{if(old)state.posts[post.id]=old;else delete state.posts[post.id];if(oldProduct)state.products[productId]=oldProduct;else delete state.products[productId];response(res,500,{error:'persistence_failed'});return true;}
     response(res,200,{post:publicPost(post,true)});return true;
   }
   if(req.method==='POST'&&path==='/v1/admin/creator/gifts') {
@@ -60,7 +62,7 @@ export async function creatorFeatureRoute(req,res,url,{state,persist,admin,proje
     const code=createGiftCode(), hash=codeHash(code);
     state.gifts??={};state.gifts[hash]=gift;
     try{await persist();}catch{delete state.gifts[hash];response(res,500,{error:'persistence_failed'});return true;}
-    response(res,201,{code,redeemPath:'/redeem/'+code,expiresAt:gift.expiresAt,maxRedemptions:gift.maxRedemptions});return true;
+    response(res,201,{code,redeemPath:'/redeem/'+code,redeemUiReady:false,expiresAt:gift.expiresAt,maxRedemptions:gift.maxRedemptions});return true;
   }
   if(req.method==='POST'&&path==='/v1/admin/creator/gifts/redeem') {
     let body;try{body=await jsonBody(req);}catch{response(res,400,{error:'invalid_json'});return true;}
