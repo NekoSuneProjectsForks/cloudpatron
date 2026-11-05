@@ -14,7 +14,7 @@ export function authCreator(authHeader,entries=creatorConfig()) {
 export function entitlement(invoice,now=Date.now()) {
   // One paid invoice grants 30 days of access; future work should derive billing periods from Go subscriptions.
   const paidAt=Date.parse(invoice.paidAt||'');
-  if(invoice.status!=='paid'||!Number.isFinite(paidAt)) return null;
+  if(invoice.productId || invoice.status!=='paid'||!Number.isFinite(paidAt)) return null;
   const expiresAt=paidAt+30*24*60*60*1000;
   if(now>=expiresAt) return null;
   return {tierId:invoice.tierId||null,creatorId:invoice.creatorId||null,active:true,expiresAt:new Date(expiresAt).toISOString()};
