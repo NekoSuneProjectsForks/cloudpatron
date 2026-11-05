@@ -46,7 +46,7 @@ dialog{background:#121915;border:1px solid #42654d;border-radius:16px;color:#f3f
 <main>
 <section class="hero" id="about"><div class="eyebrow">Creator storefront • Self-hosted</div><h1>Support creativity.<br>Unlock more.</h1><p>Discover digital downloads, creator exclusives and membership perks. Built to support one-time purchases alongside monthly creator subscriptions.</p><small id="creatorLabel">Loading creator shop…</small></section>
 <section id="shop"><div class="top"><div><h2>Creator Shop</h2><p class="subtitle">Digital goodies, videos and supporter content</p></div><input id="search" class="search" type="search" placeholder="Search the shop…" aria-label="Search products"></div><div id="grid" aria-live="polite"><div class="empty">Loading products…</div></div></section>
-<p class="info" id="membership">Memberships and customer checkout will be connected to the CloudPatron login system in a later release. A YouTube preview is public even if the purchased download is private.</p>
+<p class="info" id="membership">Checkout is available for signed-in CloudPatron patrons through the integrated Go website.  A YouTube preview is public even if the purchased download is private.</p>
 <p class="info" id="integrations">For Discord, VRChat and game server integration, use the Creator API with a scoped project key. Public VRChat supporter listings require explicit opt-in.</p>
 </main></div>
 <dialog id="preview"><div class="dialog-head"><strong id="videoTitle">Video preview</strong><button class="close" id="close" type="button">Close</button></div><iframe id="player" title="YouTube preview" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></dialog>
@@ -54,19 +54,19 @@ dialog{background:#121915;border:1px solid #42654d;border-radius:16px;color:#f3f
 const params=new URLSearchParams(location.search), creatorId=params.get('creatorId')||'demo';
 document.getElementById('creatorLabel').textContent='Creator: '+creatorId;
 const grid=document.getElementById('grid'), search=document.getElementById('search'), dialog=document.getElementById('preview'), player=document.getElementById('player');
-let products=[];
+let products=[];let csrf='';let signedIn=false;
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function render(){
  const q=search.value.trim().toLowerCase(), filtered=products.filter(p=>(p.title+' '+p.description).toLowerCase().includes(q));
  grid.innerHTML=filtered.length?'':'<div class="empty">No products found for this creator yet.</div>';
  for(const product of filtered){
   const card=document.createElement('article');card.className='card';
-  card.innerHTML='<div class="art '+(product.youtubeEmbedUrl?'video':'')+'"><span>'+esc(product.billing==='one_time'?'One-time purchase':'Monthly')+'</span>'+(product.youtubeEmbedUrl?'▶':'✦')+'</div><div class="card-body"><h3>'+esc(product.title)+'</h3><div class="desc">'+esc(product.description)+'</div><div class="card-foot"><div class="price">'+esc(product.currency)+' '+esc(product.price)+(product.billing==='monthly'?'<small> / mo</small>':'')+'</div><button class="btn" disabled title="Creator authentication and checkout integration is not yet connected">Checkout coming soon</button></div></div>';
+  card.innerHTML='<div class="art '+(product.youtubeEmbedUrl?'video':'')+'"><span>'+esc(product.billing==='one_time'?'One-time purchase':'Monthly')+'</span>'+(product.youtubeEmbedUrl?'▶':'✦')+'</div><div class="card-body"><h3>'+esc(product.title)+'</h3><div class="desc">'+esc(product.description)+'</div><div class="card-foot"><div class="price">'+esc(product.currency)+' '+esc(product.price)+(product.billing==='monthly'?'<small> / mo</small>':'')+'</div><form method="POST" action="/checkout"><input type="hidden" name="csrf" value="'+esc(csrf)+'"><input type="hidden" name="creatorId" value="'+esc(product.creatorId)+'"><input type="hidden" name="productId" value="'+esc(product.id)+'"><button class="btn" '+(!signedIn?'disabled title="Sign in to purchase"':'')+'>Buy now</button></form></div></div>';
   if(product.youtubeEmbedUrl){const preview=document.createElement('button');preview.className='close';preview.type='button';preview.textContent='▶ Watch preview';preview.style.margin='0 20px 20px';preview.addEventListener('click',()=>{player.src=product.youtubeEmbedUrl;document.getElementById('videoTitle').textContent=product.title;dialog.showModal();});card.append(preview);}
   grid.append(card);
  }
 }
-search.addEventListener('input',render);document.getElementById('close').addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>player.removeAttribute('src'));
+search.addEventListener('input',render);fetch('/patron-session',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(data=>{signedIn=!!data.authenticated&&!data.admin;csrf=data.csrf||'';render();}).catch(()=>{});document.getElementById('close').addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>player.removeAttribute('src'));
 try{const r=await fetch('/v1/public/shop?creatorId='+encodeURIComponent(creatorId),{cache:'no-store'});if(!r.ok)throw Error();const data=await r.json();products=data.products||[];render();}catch{grid.innerHTML='<div class="empty">Shop is not available right now.</div>';}
 </script>
 </body></html>
