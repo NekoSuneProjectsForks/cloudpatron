@@ -66,6 +66,8 @@ jobs:
           done
           curl --fail --silent --output /dev/null http://127.0.0.1:18080/signin
           curl --fail --silent --output /dev/null http://127.0.0.1:18080/signup
+          curl --fail --silent --output /dev/null http://127.0.0.1:18080/static/style.css
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/admin)" = "302"
           curl --fail http://127.0.0.1:18080/patron-session
           curl --fail http://127.0.0.1:18080/shop?creatorId=demo
           curl --fail http://127.0.0.1:18080/v1/public/shop?creatorId=demo
