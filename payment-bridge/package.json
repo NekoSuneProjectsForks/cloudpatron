@@ -1,0 +1,10 @@
+{
+  "name": "@nekosune/cloudpatron-payment-bridge",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Opt-in payment integration API for CloudPatron",
+  "engines": {"node": ">=20"},
+  "scripts": {"start": "node server.mjs", "test": "node --test"},
+  "dependencies": {"@heleket-payment/sdk": "0.1.0"}
+}
