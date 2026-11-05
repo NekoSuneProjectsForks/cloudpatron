@@ -5,6 +5,8 @@ import { dirname, resolve } from 'node:path';
 import { PROVIDERS } from './providers.mjs';
 import { verifyHeleket, transition } from './heleket-webhook.mjs';
 import { authCreator, creatorEntitlements } from './creator-api.mjs';
+import { shopRoute } from './shop-routes.mjs';
+import { validId } from './shop.mjs';
 
 const port = Number(process.env.BRIDGE_PORT || 8091);
 const host = process.env.BRIDGE_HOST || '127.0.0.1';
@@ -16,7 +18,7 @@ const callbackUrl = process.env.HELEKET_CALLBACK_URL || '';
 const amountPattern = /^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/;
 const codePattern = /^[A-Z]{3,10}$/;
 const invoiceIdPattern = /^[0-9a-f-]{36}$/i;
-let state = { invoices: {} };
+let state = { invoices: {}, products: {}, assets: {}, vrchat: {} };
 let writeQueue = Promise.resolve();
 
 export function validAmount(value) {
@@ -52,11 +54,12 @@ async function persist() {
   await writeQueue;
 }
 function publicInvoice(item) {
-  return {id:item.id,patronId:item.patronId,creatorId:item.creatorId||null,tierId:item.tierId||null,provider:item.provider,amount:item.amount,currency:item.currency,status:item.status,checkoutUrl:item.checkoutUrl,createdAt:item.createdAt,paidAt:item.paidAt||null,updatedAt:item.updatedAt||null};
+  return {id:item.id,patronId:item.patronId,creatorId:item.creatorId||null,tierId:item.tierId||null,productId:item.productId||null,provider:item.provider,amount:item.amount,currency:item.currency,status:item.status,checkoutUrl:item.checkoutUrl,createdAt:item.createdAt,paidAt:item.paidAt||null,updatedAt:item.updatedAt||null};
 }
 export async function handler(req,res) {
   if (req.url === '/health' && req.method === 'GET') return send(res,200,{ok:true});
   const url = new URL(req.url,'http://localhost');
+  if (await shopRoute(req,res,url,{state,persist,dbPath,admin:authorised(req.headers.authorization,apiToken)})) return;
   // Public callback authenticates via Heleket's documented signed payload, not the bridge API bearer token.
   if (req.method==='POST' && url.pathname==='/webhooks/heleket') {
     let event;
@@ -103,7 +106,15 @@ export async function handler(req,res) {
   if (req.method==='POST' && url.pathname==='/v1/invoices') {
     let data;
     try { data=await bodyJSON(req); } catch { return send(res,400,{error:'invalid_json_or_too_large'}); }
-    const {provider,patronId,amount,currency='USD',creatorId,tierId} = data || {};
+    let {provider,patronId,amount,currency='USD',creatorId,tierId,productId=null} = data || {};
+    if(productId!==null) {
+      if(!validId(productId)) return send(res,400,{error:'invalid_product'});
+      const product=state.products?.[productId];
+      if(!product||!product.published||product.creatorId!==creatorId) return send(res,404,{error:'product_not_found'});
+      // Price and currency must be taken from server-controlled catalog, never from a customer.
+      amount=product.price;currency=product.currency;
+      tierId=product.requiredTierId||'shop';
+    }
     if (provider !== 'heleket') return send(res,422,{error:'provider_not_implemented'});
     if (!/^[a-zA-Z0-9_-]{1,128}$/.test(patronId||'') || !/^[a-zA-Z0-9_-]{1,128}$/.test(creatorId||'') || !/^[a-zA-Z0-9_-]{1,128}$/.test(tierId||'') || !validAmount(amount) || !codePattern.test(currency)) {
       return send(res,400,{error:'invalid_invoice_parameters'});
@@ -124,7 +135,7 @@ export async function handler(req,res) {
     if (!checkout || checkout.protocol!=='https:' || checkout.hostname!=='pay.heleket.com') {
       return send(res,502,{error:'invalid_provider_redirect'});
     }
-    state.invoices[id]={id,patronId,creatorId,tierId,provider,amount,currency,orderId,providerReference:invoice.uuid||invoice.result?.uuid||null,status:'pending',checkoutUrl,createdAt:new Date().toISOString()};
+    state.invoices[id]={id,patronId,creatorId,tierId,productId,provider,amount,currency,orderId,providerReference:invoice.uuid||invoice.result?.uuid||null,status:'pending',checkoutUrl,createdAt:new Date().toISOString()};
     try { await persist(); } catch { delete state.invoices[id]; return send(res,500,{error:'invoice_persistence_failed'}); }
     return send(res,201,publicInvoice(state.invoices[id]));
   }
