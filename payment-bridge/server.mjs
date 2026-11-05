@@ -81,6 +81,7 @@ export async function handler(req,res) {
     const principal=authCreator(req.headers.authorization);
     if(!principal || !principal.scopes.includes('entitlements:read')) return send(res,403,{error:'missing_creator_scope'});
     const match=url.pathname.match(new RegExp('^/v1/creator/patrons/([a-zA-Z0-9_-]{1,128})/entitlements$'));
+    if(!match) return send(res,404,{error:'not_found'});
     return send(res,200,creatorEntitlements(state.invoices,principal.creatorId,match[1]));
   }
   if (!authorised(req.headers.authorization,apiToken)) return send(res,401,{error:'unauthorised'});
