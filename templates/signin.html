@@ -1,53 +1,25 @@
 {{template "header.html" .}}
-
-<div class="ui hidden divider"></div>
-
-<div class="ui container">
-    <div class="ui padded segment">
-        <div class="ui large dividing header">Sign In</div>
-        <div class="ui hidden divider"></div>
-        {{with $error := $.Request.FormValue "error"}}
-            <div class="ui large negative message">
-                <div class="content">
-                    <div class="header">
-                        {{if eq $error "invalid"}}
-                            Sign in failed. Please try again.
-                        {{else if eq $error "required"}}
-                            Sign in required.
-                        {{else}}
-                            Error. Please try again.
-                        {{end}}
-                    </div>
-                </div>
-            </div>
-            <div class="ui hidden divider"></div>
-        {{end}}
-        <form class="ui huge form" action="/signin" method="POST" novalidate autocomplete="off">
-            <div class="equal width fields">
-                <div class="field">
-                    <div class="ui left icon input">
-                        <i class="mail icon"></i>
-                        <input title="email" name="email" type="email" value="{{$.Request.FormValue "email"}}" placeholder="Email address" autofocus required>
-                    </div>
-                </div>
-                <div class="field">
-                    <div class="ui left icon input">
-                        <i class="key icon"></i>
-                        <input name="password" type="password" placeholder="Password" autofocus>
-                    </div>
-                </div>
-                <div class="field">
-                    <button type="submit" class="ui huge fluid orange button">Sign In</button>
-                </div>
-            </div>
-
-            <div class="center-aligned field">
-                <div class="ui hidden section divider"></div>
-                <a href="/forgot">Forgot password?</a>
-            </div>
-        </form>
-    </div>
-</div>
-
+<section class="ns-auth-layout">
+  <div class="ns-auth-intro">
+    <div class="ns-eyebrow">WELCOME BACK</div>
+    <h1>Your creator community, all in one place.</h1>
+    <p>Sign in to manage your membership, access creator content, and explore the shop.</p>
+    <div class="ns-auth-feature">✦ &nbsp; Member-only posts and rewards</div>
+    <div class="ns-auth-feature">✦ &nbsp; Secure purchases and downloads</div>
+    <div class="ns-auth-feature">✦ &nbsp; Membership status and billing history</div>
+  </div>
+  <div class="ns-auth-card">
+    <div class="ns-eyebrow">ACCOUNT ACCESS</div>
+    <h2>Sign in</h2><p>Enter your CloudPatron account details to continue.</p>
+    {{with $error := $.Request.FormValue "error"}}
+      <div class="ui negative message">{{if eq $error "invalid"}}Incorrect email or password.{{else if eq $error "required"}}Please sign in to continue.{{else}}Unable to sign in. Please try again.{{end}}</div>
+    {{end}}
+    <form class="ui form" method="POST" action="/signin" autocomplete="on">
+      <div class="field"><label for="login-email">Email address</label><input id="login-email" name="email" type="email" value="{{$.Request.FormValue "email"}}" placeholder="you@example.com" autocomplete="email" required autofocus></div>
+      <div class="field"><label for="login-password">Password</label><input id="login-password" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required></div>
+      <button class="ui fluid orange button" type="submit">Sign in to my account</button>
+    </form>
+    <div class="ns-auth-links"><a href="/forgot">Forgot password?</a><span>New here? <a href="/signup">Create an account</a></span></div>
+  </div>
+</section>
 {{template "footer.html" .}}
-
