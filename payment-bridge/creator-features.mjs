@@ -1,6 +1,6 @@
 import {createHash,randomBytes} from 'node:crypto';
 import {creatorEntitlements} from './creator-api.mjs';
-import {ownsProduct,validId,validPrice} from './shop.mjs';
+import {ownsProduct,validId,validPrice,youtubeEmbed} from './shop.mjs';
 
 export function codeHash(code) {
   return createHash('sha256').update(String(code).trim().toUpperCase()).digest('hex');
@@ -45,7 +45,7 @@ export function validatePost(body) {
   if(!body||!validId(body.id)||!validId(body.creatorId)||!safeName(body.title)||typeof body.content!=='string'||body.content.length>50000||typeof body.excerpt!=='string'||body.excerpt.length>400||!['free','members','one_time','members_or_purchase'].includes(body.access)||typeof body.published!=='boolean')throw Error('invalid_post');
   if(['members','members_or_purchase'].includes(body.access)&&!validId(body.tierId))throw Error('invalid_tier');
   if(['one_time','members_or_purchase'].includes(body.access)&&(!validPrice(body.price)||!/^[A-Z]{3}$/.test(body.currency||'')))throw Error('invalid_post_price');
-  return {id:body.id,creatorId:body.creatorId,title:body.title.trim(),content:body.content,excerpt:body.excerpt,access:body.access,tierId:body.tierId||null,price:body.price||null,currency:body.currency||null,videoUrl:body.videoUrl||null,published:body.published,createdAt:new Date().toISOString()};
+  return {id:body.id,creatorId:body.creatorId,title:body.title.trim(),content:body.content,excerpt:body.excerpt,access:body.access,tierId:body.tierId||null,price:body.price||null,currency:body.currency||null,videoUrl:body.videoUrl?youtubeEmbed(body.videoUrl):null,published:body.published,createdAt:new Date().toISOString()};
 }
 export function canReadPost(post,patronId,invoices,gifts,now=Date.now()) {
   if(!post||!post.published)return false;
