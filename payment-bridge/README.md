@@ -1,135 +1,66 @@
-# NekoSune CloudPatron payments — phase 1
+# NekoSune CloudPatron — Payment Bridge + Creator Studio (development)
 
-This is an **opt-in, separate Node.js 20+ bridge**, built on CloudPatron's existing Go `master` branch without altering legacy billing. It is NOT yet connected to the Go UI, database or billing paymaster.
+A **standalone Node.js 20+ bridge** for the legacy Go CloudPatron fork. The Go website, Stripe billing and session system are **not yet integrated** with these new APIs. This is a draft feature branch, not a production-ready replacement.
 
-## Implemented
+## Features implemented in the bridge
 
-- `GET /health`: process health (no secret)
-- `GET /v1/providers`: catalog and honest readiness indicators
-- `POST /v1/invoices`: create a **Heleket-only** hosted redirect invoice via `@heleket-payment/sdk`, with unique server-side order ID; bearer token required
-- `GET /v1/invoices/:id`: stored invoice status (currently **pending only**); bearer token required
-- `GET /v1/entitlements/:patronId`: **always denies** access until verified payment reconciliation and Discord account linking are implemented; bearer token required
-- Data persisted to a local JSON file, permissions restricted where supported.
+- Heleket invoice creation using `@heleket-payment/sdk`, plus signed webhooks, order/amount/currency matching, and paid/refunded/declined/cancelled statuses. Live Heleket merchant testing is outstanding.
+- Creator API read-only, scope-limited project tokens: `entitlements:read`, and `posts:read`.
+- Shop catalog with one-time and monthly access modes, private digital file uploads (25MB max), signed five-minute download links, protected file delivery and public YouTube previews.
+- Free, paid-tier-only, one-time-purchase and combined-access posts.
+- Hash-stored gift membership codes with redemption limits and expiry; private administrator redemption only for now.
+- Percentage discount codes for product checkout, scoped creator/project and expiry constraints.
+- Audience metrics and supporter entitlement listing; consented VRChat username + paid-tier JSON listing.
+- Responsive dark-theme standalone shop (`/shop?creatorId=nekosune`) and creator dashboard (`/creator-studio`).
 
-### Run (behind your reverse proxy / private network)
+**See [CREATOR_STUDIO.md](CREATOR_STUDIO.md) for API endpoints, examples, implementation status, security caveats and the full roadmap.**
+
+## Local development
 
 ```bash
 cd payment-bridge
 npm install
-BRIDGE_API_TOKEN="$(openssl rand -hex 32)" # save this into your secret manager; do not print it publicly
-export BRIDGE_API_TOKEN
+export BRIDGE_API_TOKEN="$(openssl rand -hex 32)"
+export DOWNLOAD_SIGNING_SECRET="$(openssl rand -hex 32)"
 export HELEKET_MERCHANT_ID='your-merchant-id'
-export HELEKET_PAYMENT_KEY='your-payment-key'
-export BRIDGE_HOST=127.0.0.1
-export BRIDGE_PORT=8091
-export BRIDGE_DATA_FILE=./data/invoices.json
+export HELEKET_PAYMENT_KEY='your-payment-api-key'
+export HELEKET_CALLBACK_URL='https://your-domain.example/webhooks/heleket'
+export BRIDGE_HOST='127.0.0.1'
+export BRIDGE_PORT='8091'
+export BRIDGE_DATA_FILE='./data/invoices.json'
+npm test
 npm start
 ```
 
-**Never expose the bridge publicly without TLS, authentication, rate limits and trusted ingress controls.** Token grants invoice creation and metadata reads. CloudPatron's Go user/session authentication is not connected yet. The invoice endpoint must be invoked by an authenticated server-side integration, not directly from browser JavaScript.
+The standalone shop is at `http://127.0.0.1:8091/shop?creatorId=nekosune` and developer Creator Studio is at `http://127.0.0.1:8091/creator-studio`.
 
-### Example request
+- The creator dashboard takes a private administrator token. **Only run it locally or behind trusted private access controls.**
+- Public shop checkout buttons are disabled until the Go account/login/checkout integration is built. The private `POST /v1/invoices` API can start Heleket payments for authenticated server-side callers.
+- **Never treat a redirect or client screenshot as payment verification.** Only signed and reconciled settled payments unlock content.
+- One-time purchases are durable (until refunded/revoked). Monthly access currently lasts a fixed 30 days **per paid invoice**, without automatic rebilling; not a complete subscription implementation.
+- Creator gift code generation and administrator-assisted redemption work at API level; public `/redeem/:code` and user self-service are not implemented.
+- The public VRChat list includes only opted-in linked usernames and active paid tiers; VRChat account ownership verification is not connected yet.
+- No automatic Discord role syncing, game-server whitelist syncing, patron OAuth login, dashboard role scopes, transactional ledger, auto renewals, storage backend migration, or payout functionality yet.
+- The platform uses **JSON file storage** for this prototype; do not deploy as a multi-process payment service or production creator platform before transaction-safe storage, backup, idempotency and concurrency protections are added.
 
-```bash
-curl -X POST http://127.0.0.1:8091/v1/invoices \
-  -H "Authorization: Bearer $BRIDGE_API_TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"provider":"heleket","patronId":"pa_example","amount":"15.00","currency":"USD"}'
-```
+## Payment provider status
 
-The returned `checkoutUrl` is a real Heleket-hosted page only when merchant credentials and API succeed. Invoice status remains `pending`. Do **not** interpret a browser redirect as proof of payment.
+Heleket: beta checkout + webhook integration. Legacy Stripe: existing Go implementation unchanged. PayPal, NOWPayments, ZBD, Cryptomus, BitPay, CoinGate, OxaPay, Plisio, OpenNode, Strike, Alby, Speed, Checkout.com, Revolut Pay, HIVE/HBD, STEEM/SBD, BLURT, TELOS, EOS, FIO, WAX, PIVX and FLS: **catalog / planned**, not yet implemented as working bridge checkouts.
 
-## Reference projects
-
-- CloudPatron: legacy Go app, JSON storage, monthly Stripe charges and `Patron.IsActive()` checks.
-- NekoPay: `src/config/gateways.js`, `src/services/hosted-gateways.js`, and `src/services/zbd.js`. Some NekoPay gateways are explicitly *beta/unverified*, so **no unsupported generic adapter is presented as operational here**.
-- Heleket SDK: `@heleket-payment/sdk`. Example:
-```js
-import { HeleketPayment } from '@heleket-payment/sdk';
-const client = new HeleketPayment(merchantId, paymentKey);
-const invoice = await client.createInvoice({ amount: '15.00', currency: 'USD', order_id: 'order-42' });
-console.log(invoice.url);
-```
-
-## Planned next phases (NOT implemented)
-
-1. Verified provider callbacks with **raw-body signature validation**, replay/idempotency protections, amount/currency/order matching, provider-status allowlist, and paid/refunded/revoked transitions.
-2. Connect payment-ledger records and patron tier entitlements to the Go app. Review the legacy `IsActive` / `listActivePatrons` logic and Stripe paymaster to avoid double-charging or granting unpaid access. Build an authenticated supporter checkout UI.
-3. Add real connectors for PayPal, NOWPayments, ZBD, Cryptomus, BitPay, CoinGate, OxaPay, Plisio, OpenNode, Strike, Alby, Speed, Checkout.com and Revolut Pay, with their respective official payment status APIs and webhook verification. Existing Stripe remains untouched.
-4. Add chain-specific on-chain verification for HIVE/HBD, STEEM/SBD, BLURT, TELOS, EOS, FIO, WAX, PIVX and FLS with token precision, memo/payment identity, confirmation thresholds, double-spend/reorg handling, and rate conversion.
-5. Discord OAuth2 account linking and Bot API role-sync jobs: signed internal entitlements API, guild-specific tier→role mappings, scoped bot token, queue/retry, revocation on lapse/refund, and manual reconciliation. Do not add roles directly from unverified callbacks.
-
-## Safety
-
-This phase is intentionally **not production-ready for granting membership**. No webhooks are exposed and no pending payment can be marked paid. Please do not add Stripe or crypto tokens into Git history or commit `.env` files. Restrict the invoice bridge to a private interface; the public catalog is informational only.
-
-## Payment verification and creator integration (phase 1.1)
-
-Heleket provides signed JSON callbacks. This bridge implements POST `/webhooks/heleket`, verifies the signature against `HELEKET_PAYMENT_KEY`, and validates invoice UUID (if supplied at creation), server-generated order ID, amount, currency and final status before updating the stored payment. See https://doc.heleket.com/methods/payments/webhook and https://doc.heleket.com/host-to-host.
-
-Required env in addition to the above:
-
-```bash
-export HELEKET_CALLBACK_URL='https://patron.example.com/webhooks/heleket'
-```
-
-Route that HTTPS callback from your reverse proxy to the bridge. **Do not** expose admin or creator API routes without separate authentication, TLS and rate limiting. The callback is authenticated by its cryptographic Heleket signature. Verify deployment with Heleket's test-webhook endpoint before accepting real payments. The SDK's `url_callback` parameter still needs an integration smoke test. Reconcile missed callbacks with Heleket's `/v1/payment/info` in a later phase.
-
-Supported lifecycle: `pending`, `confirming`, `paid`, `declined`, `underpaid`, `cancelled`, `refund_pending`, `refunded`. Statuses are derived from verified Heleket messages; unpaid, underpaid and refunded invoices never provide new access. This is a single-provider MVP, not yet a general payment abstraction.
-
-### Create an invoice for a supporter and tier
-
-The **private administrator** bearer token can create an invoice. `creatorId` and `tierId` must be supplied by the authenticated server-side application, not blindly accepted from an end-user browser.
+### Example: private verified catalog checkout
 
 ```bash
 curl -X POST http://127.0.0.1:8091/v1/invoices \
   -H "Authorization: Bearer $BRIDGE_API_TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"provider":"heleket","creatorId":"creator1","patronId":"patron1","tierId":"vip","amount":"15.00","currency":"USD"}'
+  -d '{"provider":"heleket","creatorId":"nekosune","patronId":"patron1","tierId":"shop","productId":"hardstyle-fx","amount":"999.99","currency":"USD"}'
 ```
 
-### Read-only Patreon-like Creator API
+For a `productId` checkout, the bridge **overrides** submitted amount/currency with the configured catalog values. Caller must be your authenticated server-side application, not an untrusted browser.
 
-To configure a project integration, generate a unique random project token. Store **only its SHA256 hash** in creator key configuration. For example, run locally with your selected token:
+## Run unit tests
 
 ```bash
-node -e "console.log(require('node:crypto').createHash('sha256').update(process.env.PROJECT_TOKEN).digest('hex'))"
+cd payment-bridge
+node --test
 ```
-
-Set `CREATOR_API_KEYS_JSON` to a JSON array such as:
-
-```json
-[
-  {
-    "keyHash": "REPLACE_WITH_64_CHARACTER_SHA256_HASH",
-    "creatorId": "creator1",
-    "projectId": "minecraft1",
-    "scopes": ["entitlements:read"]
-  }
-]
-```
-
-Each game server, Discord integration or website should have its **own project token** (never reuse the payment admin token). The caller sends:
-
-```bash
-curl -H "Authorization: Bearer $PROJECT_TOKEN" \
-  http://127.0.0.1:8091/v1/creator/patrons/patron1/entitlements
-```
-
-Example *shape* (illustrative, not a paid transaction):
-
-```json
-{"creatorId":"creator1","patronId":"patron1","active":true,"tiers":["vip"],"expiresAt":"2026-12-01T00:00:00.000Z"}
-```
-
-**Important:** tier grants currently expire after a fixed 30 days from a verified payment, as a temporary design placeholder; recurring subscriptions, grace periods, tier upgrades, linked user IDs, creator enrollment, project key management UI, per-project perk mapping, event webhooks and role/game-server delivery are **not implemented**. Bots must use this API server-side and independently map `tiers` to allowed permissions and roles. Project token revocation currently requires editing `CREATOR_API_KEYS_JSON` and restarting the bridge.
-
-`GET /v1/entitlements/:patronId` remains legacy fail-closed; use `/v1/creator/patrons/:patronId/entitlements` with an authenticated scoped creator project key.
-
-### Next Creator API improvements
-
-- `GET /v1/creator/me`, project administration/key rotation, project-specific subscriber IDs and scoped OAuth consent
-- `GET /v1/creator/tiers`, `GET /v1/creator/patrons` with pagination and privacy-scoped identity
-- Signed entitlement change webhooks, retries/idempotency, audit log and access revocation
-- Discord OAuth2 linking and guild role mapping; Minecraft/FiveM game account linking and allow-list/permission reconciliation
-- Subscription lifecycle and verified settlement reconciliation with CloudPatron Go records (JSON storage should be replaced with transactional storage before high volume)
