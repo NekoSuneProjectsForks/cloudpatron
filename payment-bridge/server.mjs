@@ -3,6 +3,8 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { PROVIDERS } from './providers.mjs';
+import { verifyHeleket, transition } from './heleket-webhook.mjs';
+import { authCreator, creatorEntitlements } from './creator-api.mjs';
 
 const port = Number(process.env.BRIDGE_PORT || 8091);
 const host = process.env.BRIDGE_HOST || '127.0.0.1';
@@ -10,6 +12,7 @@ const dbPath = resolve(process.env.BRIDGE_DATA_FILE || './data/invoices.json');
 const apiToken = process.env.BRIDGE_API_TOKEN || '';
 const merchantId = process.env.HELEKET_MERCHANT_ID || '';
 const paymentKey = process.env.HELEKET_PAYMENT_KEY || '';
+const callbackUrl = process.env.HELEKET_CALLBACK_URL || '';
 const amountPattern = /^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/;
 const codePattern = /^[A-Z]{3,10}$/;
 const invoiceIdPattern = /^[0-9a-f-]{36}$/i;
@@ -49,12 +52,39 @@ async function persist() {
   await writeQueue;
 }
 function publicInvoice(item) {
-  return {id:item.id,patronId:item.patronId,provider:item.provider,amount:item.amount,currency:item.currency,status:item.status,checkoutUrl:item.checkoutUrl,createdAt:item.createdAt};
+  return {id:item.id,patronId:item.patronId,creatorId:item.creatorId||null,tierId:item.tierId||null,provider:item.provider,amount:item.amount,currency:item.currency,status:item.status,checkoutUrl:item.checkoutUrl,createdAt:item.createdAt,paidAt:item.paidAt||null,updatedAt:item.updatedAt||null};
 }
 export async function handler(req,res) {
   if (req.url === '/health' && req.method === 'GET') return send(res,200,{ok:true});
-  if (!authorised(req.headers.authorization,apiToken)) return send(res,401,{error:'unauthorised'});
   const url = new URL(req.url,'http://localhost');
+  // Public callback authenticates via Heleket's documented signed payload, not the bridge API bearer token.
+  if (req.method==='POST' && url.pathname==='/webhooks/heleket') {
+    let event;
+    try { event=await bodyJSON(req); } catch { return send(res,400,{error:'invalid_json_or_too_large'}); }
+    if(!verifyHeleket(event,paymentKey)) return send(res,401,{error:'invalid_signature'});
+    const invoice=Object.values(state.invoices).find(i=>i.provider==='heleket' && i.orderId===event.order_id);
+    if(!invoice) return send(res,404,{error:'unknown_order'});
+    const result=transition(invoice,event);
+    if(!result.ok) return send(res,409,{error:result.reason});
+    if(!result.ignored) {
+      const previous={...invoice};
+      invoice.status=result.status;
+      invoice.updatedAt=new Date().toISOString();
+      if(result.status==='paid' && !invoice.paidAt) invoice.paidAt=invoice.updatedAt;
+      if(result.status==='refunded') invoice.refundedAt=invoice.updatedAt;
+      try { await persist(); } catch { Object.assign(invoice,previous); return send(res,500,{error:'persistence_failed'}); }
+    }
+    return send(res,200,{ok:true,status:invoice.status});
+  }
+  // Project API keys have a separate security boundary and read-only scoped permissions.
+  if(req.method==='GET' && url.pathname.startsWith('/v1/creator/')) {
+    const principal=authCreator(req.headers.authorization);
+    if(!principal || !principal.scopes.includes('entitlements:read')) return send(res,403,{error:'missing_creator_scope'});
+    const match=url.pathname.match(/^\\/v1\\/creator\\/patrons\\/([a-zA-Z0-9_-]{1,128})\\/entitlements$/);
+    if(!match) return send(res,404,{error:'not_found'});
+    return send(res,200,creatorEntitlements(state.invoices,principal.creatorId,match[1]));
+  }
+  if (!authorised(req.headers.authorization,apiToken)) return send(res,401,{error:'unauthorised'});
   if (req.method==='GET' && url.pathname==='/v1/providers') {
     return send(res,200,{providers:PROVIDERS});
   }
@@ -73,19 +103,20 @@ export async function handler(req,res) {
   if (req.method==='POST' && url.pathname==='/v1/invoices') {
     let data;
     try { data=await bodyJSON(req); } catch { return send(res,400,{error:'invalid_json_or_too_large'}); }
-    const {provider,patronId,amount,currency='USD'} = data || {};
+    const {provider,patronId,amount,currency='USD',creatorId,tierId} = data || {};
     if (provider !== 'heleket') return send(res,422,{error:'provider_not_implemented'});
-    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(patronId||'') || !validAmount(amount) || !codePattern.test(currency)) {
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(patronId||'') || !/^[a-zA-Z0-9_-]{1,128}$/.test(creatorId||'') || !/^[a-zA-Z0-9_-]{1,128}$/.test(tierId||'') || !validAmount(amount) || !codePattern.test(currency)) {
       return send(res,400,{error:'invalid_invoice_parameters'});
     }
     if (!merchantId || !paymentKey) return send(res,503,{error:'heleket_not_configured'});
     const id = randomUUID();
-    const orderId = 'cp_' + id.replaceAll('-','');
+    const orderId = 'cp_' + id.replaceAll('-','').slice(0,28);
     // Import on demand so provider discovery works without installed SDK in development.
     const {HeleketPayment} = await import('@heleket-payment/sdk');
     const client = new HeleketPayment(merchantId,paymentKey);
     let invoice;
-    try { invoice=await client.createInvoice({amount,currency,order_id:orderId}); }
+    if(!callbackUrl.startsWith('https://')) return send(res,503,{error:'heleket_callback_url_required'});
+    try { invoice=await client.createInvoice({amount,currency,order_id:orderId,url_callback:callbackUrl}); }
     catch { return send(res,502,{error:'heleket_invoice_creation_failed'}); }
     const checkoutUrl = invoice?.url;
     let checkout;
@@ -93,7 +124,7 @@ export async function handler(req,res) {
     if (!checkout || checkout.protocol!=='https:' || checkout.hostname!=='pay.heleket.com') {
       return send(res,502,{error:'invalid_provider_redirect'});
     }
-    state.invoices[id]={id,patronId,provider,amount,currency,orderId,providerReference:invoice.uuid||null,status:'pending',checkoutUrl,createdAt:new Date().toISOString()};
+    state.invoices[id]={id,patronId,creatorId,tierId,provider,amount,currency,orderId,providerReference:invoice.uuid||invoice.result?.uuid||null,status:'pending',checkoutUrl,createdAt:new Date().toISOString()};
     try { await persist(); } catch { delete state.invoices[id]; return send(res,500,{error:'invoice_persistence_failed'}); }
     return send(res,201,publicInvoice(state.invoices[id]));
   }
