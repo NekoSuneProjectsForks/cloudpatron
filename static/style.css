@@ -62,3 +62,6 @@ html{scroll-behavior:smooth}body{background:var(--ns-bg)!important;color:var(--n
 
 .ns-settings-grid{max-width:1290px;margin:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.ns-settings-grid>.ui.segment{margin:0!important}.ns-signout-panel{max-width:1290px;margin:22px auto 0;padding:18px 26px;border-radius:15px;border:1px solid #3b5441;background:#17241a;display:flex;align-items:center;justify-content:space-between;gap:15px;color:#b2cab8}
 @media(max-width:860px){.ns-settings-grid{grid-template-columns:1fr}}
+
+.ns-dashboard-actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.ns-membership-current{max-width:1290px;margin:16px auto 25px;padding:27px;background:linear-gradient(105deg,#1a3926,#14251a);border:1px solid #356b45;border-radius:18px;display:flex;justify-content:space-between;align-items:center;gap:18px}.ns-membership-current h3{color:#f0fff3;font-size:23px;margin:5px 0}.ns-membership-current p{color:#a7c9af;margin:0}.ns-membership-current.cancel{margin-top:30px;background:#191f1b;border-color:#395342}.ns-membership-amount{font-size:19px;font-weight:850;color:#8ff2af;white-space:nowrap}
+@media(max-width:650px){.ns-membership-current{flex-direction:column;align-items:start}.ns-membership-amount{white-space:normal}}
