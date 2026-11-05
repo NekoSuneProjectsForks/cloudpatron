@@ -17,7 +17,7 @@ const dbPath = resolve(process.env.BRIDGE_DATA_FILE || './data/invoices.json');
 const apiToken = process.env.BRIDGE_API_TOKEN || '';
 const vault = new GatewayVault(process.env.GATEWAY_VAULT_FILE || resolve(dirname(dbPath),'gateways.enc.json'));
 const heleketCredentials = () => ({merchantId: vault.get('heleket')?.merchantId || process.env.HELEKET_MERCHANT_ID || '', paymentKey: vault.get('heleket')?.paymentKey || process.env.HELEKET_PAYMENT_KEY || ''});
-const callbackUrl = process.env.HELEKET_CALLBACK_URL || '';
+const heleketCallbackURL = () => vault.get('heleket')?.callbackUrl || process.env.HELEKET_CALLBACK_URL || '';
 const amountPattern = /^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/;
 const codePattern = /^[A-Z]{3,10}$/;
 const invoiceIdPattern = /^[0-9a-f-]{36}$/i;
@@ -163,6 +163,7 @@ export async function handler(req,res) {
     const {HeleketPayment} = await import('@heleket-payment/sdk');
     const client = new HeleketPayment(merchantId,paymentKey);
     let invoice;
+    const callbackUrl=heleketCallbackURL();
     if(!callbackUrl.startsWith('https://')) return send(res,503,{error:'heleket_callback_url_required'});
     try { invoice=await client.createInvoice({amount,currency,order_id:orderId,url_callback:callbackUrl}); }
     catch { return send(res,502,{error:'heleket_invoice_creation_failed'}); }
