@@ -68,7 +68,7 @@ export function verifyDownload(secret,token,now=Date.now()) {
 }
 export function publicVRChatSupporters(links,invoices,creatorId,now=Date.now()) {
   return Object.values(links).filter(x=>x.creatorId===creatorId && x.publicOptIn===true && validId(x.patronId) && /^[a-zA-Z0-9 _.-]{2,64}$/.test(x.vrchatUsername||'')).map(x=>{
-    const tiers=[...new Set(Object.values(invoices).filter(i=>i.creatorId===creatorId&&i.patronId===x.patronId&&i.status==='paid'&&i.tierId&&Number.isFinite(Date.parse(i.paidAt||''))&&now<Date.parse(i.paidAt)+30*86400000).map(i=>i.tierId))];
+    const tiers=[...new Set(Object.values(invoices).filter(i=>i.creatorId===creatorId&&i.patronId===x.patronId&&!i.productId&&i.status==='paid'&&i.tierId&&Number.isFinite(Date.parse(i.paidAt||''))&&now<Date.parse(i.paidAt)+30*86400000).map(i=>i.tierId))];
     return {username:x.vrchatUsername,tiers};
   }).filter(x=>x.tiers.length>0).sort((a,b)=>a.username.localeCompare(b.username));
 }
