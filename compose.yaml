@@ -1,0 +1,27 @@
+services:
+  cloudpatron:
+    image: ${CLOUDPATRON_IMAGE:-ghcr.io/nekosuneprojectsforks/cloudpatron:dev}
+    build:
+      context: .
+      dockerfile: Dockerfile.nekosune
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${CLOUDPATRON_PORT:-8080}:8080"
+    environment:
+      CLOUDPATRON_HTTP_HOST: ${CLOUDPATRON_HTTP_HOST:?Set CLOUDPATRON_HTTP_HOST}
+      BRIDGE_API_TOKEN: ${BRIDGE_API_TOKEN:?Set BRIDGE_API_TOKEN}
+      DOWNLOAD_SIGNING_SECRET: ${DOWNLOAD_SIGNING_SECRET:?Set DOWNLOAD_SIGNING_SECRET}
+      HELEKET_MERCHANT_ID: ${HELEKET_MERCHANT_ID:-}
+      HELEKET_PAYMENT_KEY: ${HELEKET_PAYMENT_KEY:-}
+      HELEKET_CALLBACK_URL: ${HELEKET_CALLBACK_URL:-}
+      CREATOR_API_KEYS_JSON: ${CREATOR_API_KEYS_JSON:-[]}
+    volumes:
+      - cloudpatron_data:/data
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 1g
+
+volumes:
+  cloudpatron_data:
