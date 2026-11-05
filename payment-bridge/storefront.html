@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>NekoSune Creator Shop</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#f4f7f6;background:#0b0e0d}*{box-sizing:border-box}
+body{margin:0;min-height:100vh}button{cursor:pointer}a{color:inherit}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+aside{border-right:1px solid #27322c;background:#101411;padding:26px 16px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800;letter-spacing:-.4px;margin:2px 10px 35px}
+.logo{width:34px;height:34px;background:#52e99a;color:#102016;border-radius:12px;display:grid;place-items:center;font-size:19px}
+aside a{display:block;text-decoration:none;padding:14px;border-radius:13px;color:#a6b3aa;font-size:14px;margin:4px 0}
+aside a:hover,aside a.active{background:#263229;color:#effff4}
+nav .muted{margin-top:40px;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#69816f;padding-left:12px}
+main{width:100%;padding:0 48px 70px;max-width:1510px;margin:auto}
+.hero{margin:28px 0 30px;border:1px solid #303c34;background:radial-gradient(circle at 86% 5%,#245638 0,transparent 47%),linear-gradient(120deg,#151e18,#121a16 70%);border-radius:22px;padding:44px 40px;min-height:240px}
+.eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#69efaa;font-weight:800}
+h1{font-size:clamp(30px,4vw,55px);letter-spacing:-1.8px;margin:8px 0 12px}
+.hero p{max-width:640px;color:#b3c2b8;line-height:1.7;margin:0}
+.hero small{display:block;margin-top:26px;color:#819789}
+.top{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+h2{font-size:24px;letter-spacing:-.5px;margin:0}.subtitle{color:#94a79a;margin:5px 0 0}
+.search{padding:12px 15px;background:#1b231e;border:1px solid #39483f;border-radius:12px;color:#fff;width:min(340px,100%);font:inherit}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:20px}
+.card{background:#171d19;border:1px solid #2c3a30;border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.art{height:185px;background:linear-gradient(135deg,#185b41,#0d1b2d 55%,#433566);display:grid;place-items:center;font-size:54px;position:relative}
+.art.video{background:linear-gradient(135deg,#432267,#1d4059 55%,#1d673d)}
+.art span{position:absolute;top:14px;left:14px;font-size:11px;background:#101b15ba;border:1px solid #66836b;border-radius:40px;padding:6px 11px;letter-spacing:.3px}
+.card-body{padding:20px;display:flex;flex-direction:column;flex:1;gap:10px}
+.card h3{font-size:17px;margin:0;line-height:1.4}.desc{color:#95aa9d;font-size:13px;line-height:1.6;flex:1;white-space:pre-wrap}
+.card-foot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #2b352e;padding-top:14px;gap:12px}
+.price{font-size:21px;font-weight:800}.price small{font-size:11px;color:#879b8c;font-weight:400}
+.btn{border:0;border-radius:10px;background:#65eda5;color:#102218;font-weight:800;padding:10px 13px;font-size:12px}
+.btn:disabled{background:#2c3931;color:#a3b7aa;cursor:not-allowed}
+.empty{grid-column:1/-1;border:1px dashed #46574a;border-radius:18px;padding:40px;text-align:center;color:#a2b7a7}
+.info{margin-top:28px;font-size:13px;color:#849d8b;line-height:1.65}
+dialog{background:#121915;border:1px solid #42654d;border-radius:16px;color:#f3f9f4;width:min(800px,95vw);padding:20px}dialog::backdrop{background:#000b}iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:10px}
+.dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:15px}.close{background:#2d3e33;border:0;color:white;padding:8px 12px;border-radius:9px}
+@media(max-width:850px){.layout{display:block}aside{height:auto;position:relative;border-right:0;border-bottom:1px solid #27322c;padding:12px 20px}aside nav{display:flex;gap:7px;overflow:auto}aside .brand{margin:3px 0 7px}aside nav .muted{display:none}aside a{margin:0;white-space:nowrap}main{padding:0 18px 50px}.hero{padding:30px 22px}}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside><div class="brand"><span class="logo">✦</span> NekoSune Patron</div><nav aria-label="Creator navigation"><a href="#shop" class="active">▦ &nbsp; Shop</a><a href="#membership">♛ &nbsp; Membership</a><a href="#about">◈ &nbsp; About</a><div class="muted">Creator network</div><a href="#integrations">⬡ &nbsp; Integrations</a></nav></aside>
+<main>
+<section class="hero" id="about"><div class="eyebrow">Creator storefront • Self-hosted</div><h1>Support creativity.<br>Unlock more.</h1><p>Discover digital downloads, creator exclusives and membership perks. Built to support one-time purchases alongside monthly creator subscriptions.</p><small id="creatorLabel">Loading creator shop…</small></section>
+<section id="shop"><div class="top"><div><h2>Creator Shop</h2><p class="subtitle">Digital goodies, videos and supporter content</p></div><input id="search" class="search" type="search" placeholder="Search the shop…" aria-label="Search products"></div><div id="grid" aria-live="polite"><div class="empty">Loading products…</div></div></section>
+<p class="info" id="membership">Checkout is available for signed-in CloudPatron patrons through the integrated Go website.  A YouTube preview is public even if the purchased download is private.</p>
+<p class="info" id="integrations">For Discord, VRChat and game server integration, use the Creator API with a scoped project key. Public VRChat supporter listings require explicit opt-in.</p>
+</main></div>
+<dialog id="preview"><div class="dialog-head"><strong id="videoTitle">Video preview</strong><button class="close" id="close" type="button">Close</button></div><iframe id="player" title="YouTube preview" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></dialog>
+<script type="module">
+const params=new URLSearchParams(location.search), creatorId=params.get('creatorId')||'demo';
+document.getElementById('creatorLabel').textContent='Creator: '+creatorId;
+const grid=document.getElementById('grid'), search=document.getElementById('search'), dialog=document.getElementById('preview'), player=document.getElementById('player');
+let products=[];let csrf='';let signedIn=false;
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function render(){
+ const q=search.value.trim().toLowerCase(), filtered=products.filter(p=>(p.title+' '+p.description).toLowerCase().includes(q));
+ grid.innerHTML=filtered.length?'':'<div class="empty">No products found for this creator yet.</div>';
+ for(const product of filtered){
+  const card=document.createElement('article');card.className='card';
+  card.innerHTML='<div class="art '+(product.youtubeEmbedUrl?'video':'')+'"><span>'+esc(product.billing==='one_time'?'One-time purchase':'Monthly')+'</span>'+(product.youtubeEmbedUrl?'▶':'✦')+'</div><div class="card-body"><h3>'+esc(product.title)+'</h3><div class="desc">'+esc(product.description)+'</div><div class="card-foot"><div class="price">'+esc(product.currency)+' '+esc(product.price)+(product.billing==='monthly'?'<small> / mo</small>':'')+'</div><form method="POST" action="/checkout"><input type="hidden" name="csrf" value="'+esc(csrf)+'"><input type="hidden" name="creatorId" value="'+esc(product.creatorId)+'"><input type="hidden" name="productId" value="'+esc(product.id)+'"><button class="btn" '+(!signedIn?'disabled title="Sign in to purchase"':'')+'>Buy now</button></form></div></div>';
+  if(product.youtubeEmbedUrl){const preview=document.createElement('button');preview.className='close';preview.type='button';preview.textContent='▶ Watch preview';preview.style.margin='0 20px 20px';preview.addEventListener('click',()=>{player.src=product.youtubeEmbedUrl;document.getElementById('videoTitle').textContent=product.title;dialog.showModal();});card.append(preview);}
+  grid.append(card);
+ }
+}
+search.addEventListener('input',render);fetch('/patron-session',{credentials:'same-origin',cache:'no-store'}).then(r=>r.json()).then(data=>{signedIn=!!data.authenticated&&!data.admin;csrf=data.csrf||'';render();}).catch(()=>{});document.getElementById('close').addEventListener('click',()=>dialog.close());dialog.addEventListener('close',()=>player.removeAttribute('src'));
+try{const r=await fetch('/v1/public/shop?creatorId='+encodeURIComponent(creatorId),{cache:'no-store'});if(!r.ok)throw Error();const data=await r.json();products=data.products||[];render();}catch{grid.innerHTML='<div class="empty">Shop is not available right now.</div>';}
+</script>
+</body></html>
