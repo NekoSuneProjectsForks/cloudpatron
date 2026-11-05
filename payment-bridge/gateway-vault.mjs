@@ -7,7 +7,7 @@ const FIELDS={
   paypal:['clientId','clientSecret','webhookId'],
   nowpayments:['apiKey','ipnSecret'],
   zbd:['apiKey','webhookSecret'],
-  heleket:['merchantId','paymentKey'],
+  heleket:['merchantId','paymentKey','callbackUrl'],
   cryptomus:['merchantId','paymentKey'],
   bitpay:['apiToken'],
   coingate:['apiToken'],
@@ -28,7 +28,10 @@ export function validateGateway(id,values){
   const clean={};
   for(const [k,v] of Object.entries(values)){
     if(!FIELDS[id].includes(k)||typeof v!=='string'||v.length>8192)throw Error('invalid_field');
-    if(v.trim())clean[k]=v.trim();
+    if(v.trim()) {
+      if(k==='callbackUrl') { let url;try{url=new URL(v.trim());}catch{throw Error('invalid_callback_url');}if(url.protocol!=='https:'||url.username||url.password)throw Error('invalid_callback_url'); }
+      clean[k]=v.trim();
+    }
   }
   return clean;
 }
