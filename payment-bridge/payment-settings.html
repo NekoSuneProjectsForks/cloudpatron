@@ -16,12 +16,12 @@ button{border:0;border-radius:10px;background:#7ceda6;color:#122519;padding:11px
 </style></head><body><div class="layout">
 <aside><div class="brand">✦ NekoSune Studio</div><nav><a href="/admin">Overview</a><a href="/creator-studio">Creator Studio</a><a class="active" href="/payment-settings">Payment Gateways</a><a href="/shop?creatorId=nekosune">Storefront</a><a href="/admin/patrons">Audience</a><a href="/">Public page</a></nav></aside>
 <main><div class="tag">Creator settings / payments</div><h1>Payment gateways</h1><p>Connect your payment providers without editing environment variables. Secret credentials are encrypted at rest on your server and are never sent back to your browser.</p>
-<div class="notice"><strong>Gateway readiness:</strong> Heleket is wired to the new checkout and verified callbacks. Stripe remains configured through the original CloudPatron Admin page for legacy recurring billing. Other gateway settings can be saved here, but those providers are not yet connected to payment processing. The encryption key and vault file must both be backed up securely.</div>
+<div class="notice"><strong>Gateway readiness:</strong> Heleket is wired to the new checkout and verified callbacks. Stripe remains configured through the original CloudPatron Admin page for legacy recurring billing. Other gateway settings can be saved here, but those providers are not yet connected to payment processing. Never enter blockchain wallet private keys. The encryption key and vault file must both be backed up securely.</div>
 <div id="message" role="status">Checking administrator session…</div><div id="grid" class="grid"></div>
 </main></div>
 <script type="module">
 const grid=document.getElementById('grid'),msg=document.getElementById('message');let csrf='';
-const names={stripe:'Stripe',paypal:'PayPal',nowpayments:'NOWPayments',zbd:'ZBD',heleket:'Heleket',cryptomus:'Cryptomus',bitpay:'BitPay',coingate:'CoinGate',oxapay:'OxaPay',plisio:'Plisio',opennode:'OpenNode',strike:'Strike',alby:'Alby',speed:'Speed',checkoutcom:'Checkout.com',revolut:'Revolut Pay'};
+const names={stripe:'Stripe',paypal:'PayPal',nowpayments:'NOWPayments',zbd:'ZBD',heleket:'Heleket',cryptomus:'Cryptomus',bitpay:'BitPay',coingate:'CoinGate',oxapay:'OxaPay',plisio:'Plisio',opennode:'OpenNode',strike:'Strike',alby:'Alby',speed:'Speed',checkoutcom:'Checkout.com',revolut:'Revolut Pay',hive:'HIVE',hbd:'HBD',steem:'STEEM',sbd:'SBD',blurt:'BLURT',telos:'TELOS',eos:'EOS',fio:'FIO',wax:'WAX',pivx:'PIVX',fls:'FLS'};
 const pretty=s=>s.replace(/([A-Z])/g,' $1').replace(/^./,v=>v.toUpperCase());
 async function request(path,body){const r=await fetch(path,{credentials:'same-origin',cache:'no-store',headers:{'content-type':'application/json','x-csrf-token':csrf},...(body?{method:'POST',body:JSON.stringify(body)}:{})});const json=await r.json();if(!r.ok)throw Error(json.error||'Unable to save');return json;}
 function render(gateways){grid.replaceChildren();for(const gateway of gateways){
@@ -29,7 +29,7 @@ function render(gateways){grid.replaceChildren();for(const gateway of gateways){
  const head=document.createElement('div');head.className='cardhead';
  const title=document.createElement('h2');title.textContent=names[gateway.id]||gateway.id;
  const status=document.createElement('span');status.className='status'+(gateway.configured?' ready':'');status.textContent=gateway.configured?'Credentials saved':'Not configured';head.append(title,status);card.append(head);
- const note=document.createElement('p');note.className='help';note.textContent=gateway.id==='heleket'?'Checkout + verified webhook integration':gateway.id==='stripe'?'Legacy Stripe billing uses Admin → Project settings':'Credentials only; checkout integration planned';card.append(note);
+ const note=document.createElement('p');note.className='help';note.textContent=gateway.id==='heleket'?'Checkout + verified webhook integration':gateway.id==='stripe'?'Legacy Stripe billing uses Admin → Project settings':gateway.fields.some(f=>f.name==='receivingAccount'||f.name==='receivingAddress')?'Receive-only wallet settings; on-chain verification planned':'Credentials only; checkout integration planned';card.append(note);
  const form=document.createElement('form');form.autocomplete='off';
  for(const field of gateway.fields){
   const label=document.createElement('label');label.textContent=pretty(field.name);const input=document.createElement('input');input.name=field.name;input.type=field.secret?'password':'text';input.maxLength=8192;input.autocomplete='new-password';input.placeholder=field.configured?(field.secret?'Saved securely · enter to replace':'Configured'):'Enter '+pretty(field.name);if(field.value)input.value=field.value;
