@@ -33,6 +33,7 @@ The page lists:
 - Cryptomus, BitPay, CoinGate, OxaPay, Plisio
 - OpenNode, Strike, Alby, Speed
 - Checkout.com and Revolut Pay
+- Receive-only on-chain configurations for HIVE, HBD, STEEM, SBD, BLURT, TELOS, EOS, FIO, WAX, PIVX and FLS (recipient account/address and optional HTTPS RPC URL; **never enter wallet private keys**)
 
 Credentials are saved through the existing administrator session to the private bridge, not directly from an anonymous browser. The Go proxy checks the signed administrator session and requires an origin and per-session CSRF token for changes.
 
