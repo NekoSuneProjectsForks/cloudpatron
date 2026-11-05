@@ -217,12 +217,14 @@
                 </div>
                 <div class="{{if not $.Info.Mail.Password}}error{{end}} field">
                     <div class="ui small header">Mail Password</div>
-                    <input name="mail_password" type="text" value="{{$.Info.Mail.Password}}" placeholder="">
+                    <input name="mail_password" type="password" value="" autocomplete="new-password" placeholder="{{if $.Info.Mail.Password}}Configured · leave blank to keep password{{else}}Enter SMTP password{{end}}">
                 </div>
             </div>
 
             <div class="ui hidden divider"></div>
             <div class="ui dividing orange header">Stripe Payments API</div>
+            <p><a href="/payment-settings" class="ui basic green button">Manage all payment gateways</a></p>
+            <p class="ns-hint">Legacy Stripe monthly payments still use these credentials. Secret fields stay hidden when editing this form.</p>
             <div class="ui message">
                 <i class="info circle grey icon"></i>Add your Stripe API information to enable credit card processing. Don't have an account? <a target="_blank" href="https://stripe.com">Sign up on Stripe</a>.
             </div>
@@ -234,7 +236,7 @@
                 </div>
                 <div class="{{if not $.Info.Stripe.SecretKey}}error{{end}} field">
                     <div class="ui small header">Stripe Secret Key</div>
-                    <input name="stripe_secret_key" type="text" value="{{$.Info.Stripe.SecretKey}}" placeholder="e.g. sk_live_sohsoo0quewizaoku9sha7Ei">
+                    <input name="stripe_secret_key" type="password" value="" autocomplete="new-password" placeholder="{{if $.Info.Stripe.SecretKey}}Configured · leave blank to keep current secret{{else}}Enter Stripe secret key{{end}}">
                 </div>
             </div>
 
