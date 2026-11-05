@@ -10,6 +10,8 @@ on:
       - 'docker/**'
       - 'compose.yaml'
       - 'payment-bridge/**'
+      - 'templates/**'
+      - 'static/style.css'
       - '.github/workflows/nekosune-docker.yml'
   push:
     branches:
@@ -62,6 +64,8 @@ jobs:
             if curl --fail --silent --output /dev/null http://127.0.0.1:18080/signin; then break; fi
             sleep 2
           done
+          curl --fail --silent --output /dev/null http://127.0.0.1:18080/signin
+          curl --fail --silent --output /dev/null http://127.0.0.1:18080/signup
           curl --fail http://127.0.0.1:18080/patron-session
           curl --fail http://127.0.0.1:18080/shop?creatorId=demo
           curl --fail http://127.0.0.1:18080/v1/public/shop?creatorId=demo
