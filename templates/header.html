@@ -1,94 +1,56 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-        <meta name="referrer" content="origin" />
-        <link rel="shortcut icon" href="/thumbnail?v={{$.Version}}" />
-        <link rel="apple-touch-icon" href="/thumbnail?v={{$.Version}}" />
-
-        <title>
-            {{if $.Info.Name}}
-                {{$.Info.Name}} - 
-            {{end}}
-            Cloud Patron
-        </title>
-
-        <link rel="stylesheet" type="text/css" href="/static/roboto.css?v={{$.Version}}">
-        <link rel="stylesheet" type="text/css" href="/static/semantic/semantic.min.css?v={{$.Version}}">
-        <link rel="stylesheet" type="text/css" href="/static/style.css?v={{$.Version}}">
-
-        <script src="/static/jquery.min.js"></script>
-        <script src="/static/semantic/semantic.min.js"></script>
-    </head>
-    <body>
-        {{if $.Admin}}
-            <div class="top-menu">
-                {{if $.Backlink}}
-                    {{if hasprefix $.Section "admin/"}}
-                        <a class="backlink" href="{{$.Backlink}}"><i class="large orange home icon"></i></a>
-                    {{end}}
-                {{end}}
-                <a href="/" class="brandlink header-brand">NekoSune Patron</a>
-                {{if hasprefix $.Section "admin/"}}
-                    <a href="/admin" class="ui large right floated orange basic button">Admin</a>
-                {{else}}
-                    <a href="/admin" class="ui large right floated orange button">Admin</a>
-                {{end}}
-            </div>
-
-            {{if hasprefix $.Section "admin/"}}
-                <div class="ui hidden divider"></div>
-                <div class="ui container">
-                    <div class="ui padded segment">
-                        <div class="ui massive secondary pointing orange stackable menu">
-                            <a class="item" href="/">Page</a>
-                            <a class="{{if hasprefix $.Section "admin/index"}}active{{end}} item" href="/admin">Admin</a>
-                            <a class="{{if hasprefix $.Section "admin/patrons"}}active{{end}} item" href="/admin/patrons">Patrons</a>
-                            <a class="{{if hasprefix $.Section "admin/posts"}}active{{end}} item" href="/admin/posts">Posts</a>
-                            <a class="{{if hasprefix $.Section "admin/levels"}}active{{end}} item" href="/admin/levels">Levels</a>
-                            <a class="{{if hasprefix $.Section "admin/goals"}}active{{end}} item" href="/admin/goals">Goals</a>
-                            <a class="item" href="/creator-studio">Creator Studio</a>
-                            <a class="item" href="/shop?creatorId=nekosune">Shop</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="ui hidden divider"></div>
-            {{end}}
-        {{else if $.Patron.ID}}
-            <div class="top-menu">
-                <a href="/" class="brandlink header-brand">CLOUD PATRON</a>
-                <a href="/patron" class="ui large right floated orange button">My Account</a>
-            </div>
-            {{if hasprefix $.Section "patron/"}}
-                <div class="ui hidden divider"></div>
-                <div class="ui container">
-                    <div class="ui padded segment">
-                        <div class="ui massive secondary pointing orange stackable menu">
-                            <a class="item" href="/">Home</a>
-                            <a class="{{if hasprefix $.Section "patron/index"}}active{{end}} item" href="/patron">My Account</a>
-                            <a class="{{if hasprefix $.Section "patron/support"}}active{{end}} item" href="/patron/support">Support Level</a>
-                            <a class="{{if hasprefix $.Section "patron/payments"}}active{{end}} item" href="/patron/payments">Payments</a>
-                            <a class="item" href="/shop?creatorId=nekosune">Shop</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="ui hidden divider"></div>
-            {{end}}
-        {{else}}
-            <div class="top-menu">
-                {{if eq $.Section "signin"}}
-                    <a href="/signup" class="ui right floated orange large button">Sign Up</a>
-                {{else if eq $.Section "signup"}}
-                    <a href="/signin" class="ui right floated basic large button">Sign In</a>
-                {{else}}
-                    <a href="/signin" class="ui right floated basic large button">Sign In</a>
-                {{end}}
-                <a href="/" class="brandlink header-brand">CLOUD PATRON</a>
-            </div>
-        {{end}}
-
-        <div class="full height">
-
-<!--content-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="color-scheme" content="dark">
+<title>{{if $.Info.Name}}{{$.Info.Name}} · {{end}}NekoSune Patron</title>
+<link rel="icon" href="/thumbnail?v={{$.Version}}">
+<link rel="stylesheet" href="/static/roboto.css?v={{$.Version}}">
+<link rel="stylesheet" href="/static/semantic/semantic.min.css?v={{$.Version}}">
+<link rel="stylesheet" href="/static/style.css?v={{$.Version}}">
+<script src="/static/jquery.min.js" defer></script>
+<script src="/static/semantic/semantic.min.js" defer></script>
+</head>
+<body class="{{if $.Admin}}role-admin{{else if $.Patron.ID}}role-patron{{else}}role-visitor{{end}}">
+<div class="ns-shell">
+<aside class="ns-sidebar" aria-label="Primary navigation">
+  <a href="/" class="ns-brand"><span class="ns-mark">✦</span><span>NekoSune<span class="ns-brand-accent"> Patron</span><small>Creator platform</small></span></a>
+  <div class="ns-nav-title">Explore</div>
+  <nav class="ns-nav">
+    <a href="/" class="{{if eq $.Section "index"}}selected{{end}}">⌂ <span>Home</span></a>
+    <a href="/posts" class="{{if eq $.Section "posts"}}selected{{end}}">▤ <span>Posts</span></a>
+    <a href="/shop?creatorId=nekosune">▦ <span>Creator Shop</span></a>
+    <a href="/#memberships">♛ <span>Memberships</span></a>
+    {{if $.Admin}}
+      <div class="ns-nav-title">Creator management</div>
+      <a href="/admin" class="{{if eq $.Section "admin/index"}}selected{{end}}">◈ <span>Overview</span></a>
+      <a href="/creator-studio">▣ <span>Creator Studio</span></a>
+      <a href="/admin/patrons" class="{{if hasprefix $.Section "admin/patrons"}}selected{{end}}">♙ <span>Audience</span></a>
+      <a href="/admin/posts" class="{{if hasprefix $.Section "admin/posts"}}selected{{end}}">▤ <span>Manage posts</span></a>
+      <a href="/admin/levels" class="{{if hasprefix $.Section "admin/levels"}}selected{{end}}">♛ <span>Membership tiers</span></a>
+      <a href="/admin/goals" class="{{if hasprefix $.Section "admin/goals"}}selected{{end}}">◎ <span>Goals</span></a>
+      <a href="/payment-settings">◇ <span>Payment gateways</span></a>
+      <a href="/admin">⚙ <span>Platform settings</span></a>
+    {{else if $.Patron.ID}}
+      <div class="ns-nav-title">My membership</div>
+      <a href="/patron" class="{{if eq $.Section "patron/index"}}selected{{end}}">◈ <span>My dashboard</span></a>
+      <a href="/patron/support" class="{{if eq $.Section "patron/support"}}selected{{end}}">♛ <span>Support level</span></a>
+      <a href="/patron/payments" class="{{if eq $.Section "patron/payments"}}selected{{end}}">◷ <span>Payment history</span></a>
+    {{end}}
+  </nav>
+  <div class="ns-sidebar-bottom">
+  <span class="ns-status-dot"></span> Self-hosted creator platform
+  </div>
+</aside>
+<div class="ns-main">
+<header class="ns-topbar">
+  <div class="ns-topbar-context"><span class="ns-page-icon">✦</span><span>{{if $.Info.Name}}{{$.Info.Name}}{{else}}Creator space{{end}}</span></div>
+  <div class="ns-top-actions">
+    {{if $.Admin}}<a class="ns-top-link" href="/creator-studio">Creator Studio</a><a class="ns-top-primary" href="/payment-settings">Settings</a>
+    {{else if $.Patron.ID}}<a class="ns-top-link" href="/patron">My account</a><a class="ns-top-primary" href="/shop?creatorId=nekosune">Browse shop</a>
+    {{else}}<a class="ns-top-link" href="/signin">Sign in</a><a class="ns-top-primary" href="/signup">Become a member</a>{{end}}
+  </div>
+</header>
+<main class="ns-content full height">
