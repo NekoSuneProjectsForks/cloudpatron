@@ -15,6 +15,7 @@ on:
     branches:
       - master
       - feature/nekosune-payments-discord-api
+      - feature/creator-platform-redesign-gateway-settings
   workflow_dispatch:
     inputs:
       publish:
@@ -64,19 +65,23 @@ jobs:
           curl --fail http://127.0.0.1:18080/patron-session
           curl --fail http://127.0.0.1:18080/shop?creatorId=demo
           curl --fail http://127.0.0.1:18080/v1/public/shop?creatorId=demo
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/payment-settings)" = "303"
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:18080/creator-api/gateways)" = "403"
       - name: Login to GHCR
-        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/feature/nekosune-payments-discord-api'))
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/feature/nekosune-payments-discord-api' || github.ref == 'refs/heads/feature/creator-platform-redesign-gateway-settings'))
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish GHCR image
-        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/feature/nekosune-payments-discord-api'))
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/feature/nekosune-payments-discord-api' || github.ref == 'refs/heads/feature/creator-platform-redesign-gateway-settings'))
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           if [ "${GITHUB_REF}" = "refs/heads/master" ]; then
             IMAGE_TAG=latest
+          elif [ "${GITHUB_REF}" = "refs/heads/feature/creator-platform-redesign-gateway-settings" ]; then
+            IMAGE_TAG=redesign
           else
             IMAGE_TAG=dev
           fi
