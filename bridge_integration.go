@@ -104,6 +104,11 @@ func bridgeProxyPage(w http.ResponseWriter,r *http.Request,path string){
 func shopPage(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
   bridgeProxyPage(w,r,"/shop")
 }
+func gatewaySettingsPage(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
+  session,ok:=bridgeSession(r)
+  if !ok||!session.Admin {http.Redirect(w,r,"/signin?error=required",http.StatusSeeOther);return}
+  bridgeProxyPage(w,r,"/payment-settings")
+}
 func creatorStudioPage(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
   session,ok:=bridgeSession(r)
   if !ok||!session.Admin {http.Redirect(w,r,"/signin?error=required",http.StatusSeeOther);return}
