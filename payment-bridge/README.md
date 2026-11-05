@@ -62,3 +62,74 @@ console.log(invoice.url);
 ## Safety
 
 This phase is intentionally **not production-ready for granting membership**. No webhooks are exposed and no pending payment can be marked paid. Please do not add Stripe or crypto tokens into Git history or commit `.env` files. Restrict the invoice bridge to a private interface; the public catalog is informational only.
+
+## Payment verification and creator integration (phase 1.1)
+
+Heleket provides signed JSON callbacks. This bridge implements POST `/webhooks/heleket`, verifies the signature against `HELEKET_PAYMENT_KEY`, and validates invoice UUID (if supplied at creation), server-generated order ID, amount, currency and final status before updating the stored payment. See https://doc.heleket.com/methods/payments/webhook and https://doc.heleket.com/host-to-host.
+
+Required env in addition to the above:
+
+```bash
+export HELEKET_CALLBACK_URL='https://patron.example.com/webhooks/heleket'
+```
+
+Route that HTTPS callback from your reverse proxy to the bridge. **Do not** expose admin or creator API routes without separate authentication, TLS and rate limiting. The callback is authenticated by its cryptographic Heleket signature. Verify deployment with Heleket's test-webhook endpoint before accepting real payments. The SDK's `url_callback` parameter still needs an integration smoke test. Reconcile missed callbacks with Heleket's `/v1/payment/info` in a later phase.
+
+Supported lifecycle: `pending`, `confirming`, `paid`, `declined`, `underpaid`, `cancelled`, `refund_pending`, `refunded`. Statuses are derived from verified Heleket messages; unpaid, underpaid and refunded invoices never provide new access. This is a single-provider MVP, not yet a general payment abstraction.
+
+### Create an invoice for a supporter and tier
+
+The **private administrator** bearer token can create an invoice. `creatorId` and `tierId` must be supplied by the authenticated server-side application, not blindly accepted from an end-user browser.
+
+```bash
+curl -X POST http://127.0.0.1:8091/v1/invoices \
+  -H "Authorization: Bearer $BRIDGE_API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"provider":"heleket","creatorId":"creator1","patronId":"patron1","tierId":"vip","amount":"15.00","currency":"USD"}'
+```
+
+### Read-only Patreon-like Creator API
+
+To configure a project integration, generate a unique random project token. Store **only its SHA256 hash** in creator key configuration. For example, run locally with your selected token:
+
+```bash
+node -e "console.log(require('node:crypto').createHash('sha256').update(process.env.PROJECT_TOKEN).digest('hex'))"
+```
+
+Set `CREATOR_API_KEYS_JSON` to a JSON array such as:
+
+```json
+[
+  {
+    "keyHash": "REPLACE_WITH_64_CHARACTER_SHA256_HASH",
+    "creatorId": "creator1",
+    "projectId": "minecraft1",
+    "scopes": ["entitlements:read"]
+  }
+]
+```
+
+Each game server, Discord integration or website should have its **own project token** (never reuse the payment admin token). The caller sends:
+
+```bash
+curl -H "Authorization: Bearer $PROJECT_TOKEN" \
+  http://127.0.0.1:8091/v1/creator/patrons/patron1/entitlements
+```
+
+Example *shape* (illustrative, not a paid transaction):
+
+```json
+{"creatorId":"creator1","patronId":"patron1","active":true,"tiers":["vip"],"expiresAt":"2026-12-01T00:00:00.000Z"}
+```
+
+**Important:** tier grants currently expire after a fixed 30 days from a verified payment, as a temporary design placeholder; recurring subscriptions, grace periods, tier upgrades, linked user IDs, creator enrollment, project key management UI, per-project perk mapping, event webhooks and role/game-server delivery are **not implemented**. Bots must use this API server-side and independently map `tiers` to allowed permissions and roles. Project token revocation currently requires editing `CREATOR_API_KEYS_JSON` and restarting the bridge.
+
+`GET /v1/entitlements/:patronId` remains legacy fail-closed; use `/v1/creator/patrons/:patronId/entitlements` with an authenticated scoped creator project key.
+
+### Next Creator API improvements
+
+- `GET /v1/creator/me`, project administration/key rotation, project-specific subscriber IDs and scoped OAuth consent
+- `GET /v1/creator/tiers`, `GET /v1/creator/patrons` with pagination and privacy-scoped identity
+- Signed entitlement change webhooks, retries/idempotency, audit log and access revocation
+- Discord OAuth2 linking and guild role mapping; Minecraft/FiveM game account linking and allow-list/permission reconciliation
+- Subscription lifecycle and verified settlement reconciliation with CloudPatron Go records (JSON storage should be replaced with transactional storage before high volume)
