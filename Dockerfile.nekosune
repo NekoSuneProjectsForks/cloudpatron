@@ -18,6 +18,9 @@ ENV NODE_ENV=production \
     BRIDGE_PORT=8091 \
     BRIDGE_DATA_FILE=/data/payments/invoices.json
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gosu \
+    && rm -rf /var/lib/apt/lists/*
 COPY payment-bridge/package.json ./payment-bridge/
 RUN cd payment-bridge && npm install --omit=dev --no-audit --no-fund
 COPY payment-bridge ./payment-bridge
@@ -26,7 +29,6 @@ COPY docker/start.sh /usr/local/bin/cloudpatron-start
 RUN chmod 0755 /usr/local/bin/cloudpatron /usr/local/bin/cloudpatron-start \
     && mkdir -p /data/legacy /data/payments \
     && chown -R node:node /data /app
-USER node
 EXPOSE 8080
 VOLUME ["/data"]
 WORKDIR /app/payment-bridge
