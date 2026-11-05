@@ -1,0 +1,30 @@
+name: CloudPatron payment bridge checks
+on:
+  pull_request:
+    paths:
+      - 'payment-bridge/**'
+      - '.github/workflows/payment-bridge-tests.yml'
+  push:
+    branches:
+      - feature/nekosune-payments-discord-api
+    paths:
+      - 'payment-bridge/**'
+      - '.github/workflows/payment-bridge-tests.yml'
+permissions:
+  contents: read
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax verification
+        run: |
+          node --check payment-bridge/server.mjs
+          node --check payment-bridge/heleket-webhook.mjs
+          node --check payment-bridge/creator-api.mjs
+      - name: Unit tests (no provider credentials)
+        working-directory: payment-bridge
+        run: node --test
