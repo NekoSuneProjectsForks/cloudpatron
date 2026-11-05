@@ -222,6 +222,17 @@ func main() {
 	// Routes
 	//
 	r := &httprouter.Router{}
+	// NekoSune integrated creator features (same signed Go session for gift claims and admin).
+	r.GET("/shop", shopPage)
+	r.GET("/creator-studio", creatorStudioPage)
+	r.GET("/creator-session", bridgeSessionAPI)
+	r.GET("/patron-session", bridgeSessionAPI)
+	r.GET("/v1/public/*path", bridgePublicProxy)
+	r.GET("/creator-api/*path", creatorAdminProxy)
+	r.POST("/creator-api/*path", creatorAdminProxy)
+	r.POST("/checkout", bridgeCheckout)
+	r.GET("/redeem/:code", redeemGiftPage)
+	r.POST("/redeem/:code", redeemGiftPage)
 	r.GET("/", Log(WebHandler(indexHandler, "index")))
 	r.GET("/posts", Log(WebHandler(postsHandler, "posts")))
 	r.GET("/posts/:post", Log(WebHandler(postsHandler, "posts")))
