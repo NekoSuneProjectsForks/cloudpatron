@@ -1,149 +1,32 @@
 {{template "header.html" .}}
-
+<section class="ns-section-head"><div><div class="ns-eyebrow">YOUR SUPPORT</div><h2>Membership plans</h2><p>Choose a membership tier that suits you. You can update or cancel support from this page.</p></div><a class="ns-action secondary" href="/patron/payments">Payment history</a></section>
 {{if or $.Patron.Amount $.Patron.Canceled}}
-    <div class="ui container">
-        <div class="ui padded segment">
-            <div class="ui huge dividing orange header">Support Level</div>
-            <div class="ui hidden divider"></div>
-
-            {{with $success := .Request.FormValue "success"}}
-                <div class="ui large info message">
-                    <div class="content">
-                        <div class="header">
-                            {{if eq $success "changes"}}
-                                Changes saved successfully.
-                            {{else}}
-                                Success!
-                            {{end}}
-                        </div>
-                        <a class="close-link" href="/patron/support"><i class="close icon"></i></a>
-                    </div>
-                </div>
-                <div class="ui hidden divider"></div>
-            {{end}}
-
-            <div class="center-aligned">
-                <div class="ui large orange statistic">
-                    {{if $.Patron.Canceled}}
-                        <div class="value">
-                            Canceled
-                        </div>
-                        <div class="label">
-                            &nbsp;
-                        </div>
-                    {{else}}
-                        <div class="value">
-                            ${{comma $.Patron.Amount}}
-                        </div>
-                        <div class="label">
-                            per month
-                        </div>
-                    {{end}}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="ui hidden divider"></div>
+<section class="ns-membership-current">
+  <div><span class="ns-eyebrow">CURRENT SUPPORT</span><h3>{{if $.Patron.Canceled}}Membership cancelled{{else}}Active pledge{{end}}</h3><p>{{if $.Patron.Canceled}}You can select a new tier below to resume supporting.{{else}}Your current support level is ${{comma $.Patron.Amount}} per month.{{end}}</p></div>
+  <span class="ns-membership-amount">{{if $.Patron.Canceled}}Cancelled{{else}}${{comma $.Patron.Amount}} / mo{{end}}</span>
+</section>
 {{end}}
-
-<div class="ui container">
-    <div class="ui three column stackable grid">
-        {{range $t := $.Levels}}
-            <div class="column">
-                <div class="ui segment">
-
-                    <div class="support-box">
-                        <div class="ui large center aligned dividing {{if ge $.Patron.Amount $t.Amount}}orange{{end}} header">
-                            {{$t.Name}}
-                        </div>
-                        <div class="center-aligned">
-                            <div class="ui small statistic">
-                                <div class="value">
-                                    ${{comma $t.Amount}}
-                                </div>
-                                <div class="label">
-                                    per month
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div class="page-text">
-                            {{$t.Description | markdown}}
-                        </div>
-                        <form class="ui large form" action="/patron/support" method="POST">
-                            <input type="hidden" name="amount" value="{{$t.Amount}}">
-                            <div class="field support-box-button">
-                                <button type="submit" class="ui fluid orange button">Select</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        {{end}}
-        <div class="column">
-            <div class="ui segment">
-                <div class="support-box">
-                    <div class="ui large center aligned dividing header">
-                        Custom Level
-                    </div>
-                    <div class="center-aligned">
-                        <div class="ui small statistic">
-                            <div class="value">
-                                $__
-                            </div>
-                            <div class="label">
-                                per month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ui section hidden divider"></div>
-                    <div class="ui section hidden divider"></div>
-                    <div class="ui section hidden divider"></div>
-                    <form class="ui large form" action="/patron/support" method="POST">
-                        <div class="field">
-                            <input type="text" name="amount" placeholder="$">
-                        </div>
-                        <div class="field support-box-button">
-                            <button type="submit" class="ui fluid orange button">Select</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="column">
-            <div class="ui segment">
-                <div class="support-box">
-                    <div class="ui large center aligned dividing header">
-                        Cancel Support
-                    </div>
-                    <div class="center-aligned">
-                        <div class="ui small statistic">
-                            <div class="value">
-                                $0
-                            </div>
-                            <div class="label">
-                                per month
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ui section hidden divider"></div>
-                    <div class="ui section hidden divider"></div>
-                    <div class="ui section hidden divider"></div>
-                    <form class="ui large form" action="/patron/support" method="POST">
-                        <div class="field">
-                            <input type="text" name="amount" value="0" placeholder="$0">
-                        </div>
-                        <div class="field support-box-button">
-                            <button type="submit" class="ui fluid orange button">Select</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-    </div>
+{{with $.Request.FormValue "success"}}<div class="ui positive message">Membership selection saved.</div>{{end}}
+<div class="ns-card-grid">
+{{range $tier := $.Levels}}
+<article class="ns-feature-card">
+  <span class="ns-card-chip">MONTHLY MEMBERSHIP</span>
+  <h3>{{$tier.Name}}</h3><div class="ns-price">${{comma $tier.Amount}} <small>/ month</small></div>
+  <div class="ns-card-copy">{{$tier.Description | markdown}}</div>
+  <form class="ui form" action="/patron/support" method="POST">
+    <input type="hidden" name="amount" value="{{$tier.Amount}}">
+    <button class="ui fluid orange button" type="submit">Choose {{$tier.Name}}</button>
+  </form>
+</article>
+{{end}}
+<article class="ns-feature-card"><span class="ns-card-chip">FLEXIBLE SUPPORT</span><h3>Choose your amount</h3>
+<div class="ns-price">Custom <small>/ month</small></div>
+<p class="ns-card-copy">Pick a different amount to support the creator.</p>
+<form class="ui form" action="/patron/support" method="POST"><div class="field"><label for="custom-amount">Monthly amount</label><input id="custom-amount" name="amount" type="number" min="1" step="1" placeholder="Amount" required></div><button class="ui fluid orange button" type="submit">Set custom amount</button></form>
+</article>
 </div>
-
+<section class="ns-membership-current cancel">
+  <div><span class="ns-eyebrow">MEMBERSHIP CONTROLS</span><h3>Need to stop supporting?</h3><p>You can cancel your current support from this account.</p></div>
+  <form action="/patron/support" method="POST"><input type="hidden" name="amount" value="0"><button class="ui basic button" type="submit">Cancel support</button></form>
+</section>
 {{template "footer.html" .}}
