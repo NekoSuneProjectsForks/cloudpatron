@@ -59,3 +59,6 @@ html{scroll-behavior:smooth}body{background:var(--ns-bg)!important;color:var(--n
 .ns-auth-card{background:#142018;border:1px solid #385141;border-radius:22px;padding:clamp(23px,3vw,43px);box-shadow:0 30px 85px #0005}.ns-auth-card h2{color:#f2fff5;font-size:32px;margin:0 0 5px}.ns-auth-card p{color:#98b79f;margin:0 0 23px}.ns-auth-card .ui.form .field{margin-bottom:21px}.ns-auth-card .ui.form button{margin-top:13px;padding:16px!important}.ns-auth-links{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:26px;font-size:13px;color:#aac5b1}
 .ns-hint{color:#a8c7ad;font-size:12px}
 @media(max-width:900px){.ns-auth-layout{grid-template-columns:1fr;gap:5px;margin:0 auto 30px}.ns-auth-intro{padding:20px 4px}.ns-auth-feature{display:none}}
+
+.ns-settings-grid{max-width:1290px;margin:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.ns-settings-grid>.ui.segment{margin:0!important}.ns-signout-panel{max-width:1290px;margin:22px auto 0;padding:18px 26px;border-radius:15px;border:1px solid #3b5441;background:#17241a;display:flex;align-items:center;justify-content:space-between;gap:15px;color:#b2cab8}
+@media(max-width:860px){.ns-settings-grid{grid-template-columns:1fr}}
