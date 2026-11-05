@@ -13,6 +13,8 @@ test('invalid provider names and arbitrary fields denied',()=>{
  assert.throws(()=>validateGateway('fake',{apiKey:'x'}));
  assert.throws(()=>validateGateway('heleket',{arbitrary:'x'}));
  assert.throws(()=>validateGateway('heleket',{paymentKey:5}));
+ assert.throws(()=>validateGateway('heleket',{callbackUrl:'http://insecure.example/webhooks/heleket'}));
+ assert.equal(validateGateway('heleket',{callbackUrl:'https://patron.example.com/webhooks/heleket'}).callbackUrl,'https://patron.example.com/webhooks/heleket');
 });
 test('browser response never reveals secret values',()=>{
  const config=safeGateway('heleket',{merchantId:'merchant123',paymentKey:'topsecret'});
