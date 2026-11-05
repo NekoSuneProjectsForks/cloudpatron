@@ -18,7 +18,13 @@ const FIELDS={
   alby:['accessToken'],
   speed:['apiKey'],
   checkoutcom:['publicKey','secretKey','webhookSecret'],
-  revolut:['merchantApiKey','webhookSecret']
+  revolut:['merchantApiKey','webhookSecret'],
+  hive:['receivingAccount','rpcUrl'],hbd:['receivingAccount','rpcUrl'],
+  steem:['receivingAccount','rpcUrl'],sbd:['receivingAccount','rpcUrl'],
+  blurt:['receivingAccount','rpcUrl'],telos:['receivingAccount','rpcUrl'],
+  eos:['receivingAccount','rpcUrl'],fio:['receivingAccount','rpcUrl'],
+  wax:['receivingAccount','rpcUrl'],pivx:['receivingAddress','rpcUrl'],
+  fls:['receivingAddress','rpcUrl']
 };
 const SECRET=new Set(['secretKey','webhookSecret','paymentKey','clientSecret','apiKey','apiToken','ipnSecret','merchantApiKey','accessToken']);
 export function definitions(){return Object.entries(FIELDS).map(([id,fields])=>({id,fields:fields.map(name=>({name,secret:SECRET.has(name)}))}));}
@@ -29,7 +35,7 @@ export function validateGateway(id,values){
   for(const [k,v] of Object.entries(values)){
     if(!FIELDS[id].includes(k)||typeof v!=='string'||v.length>8192)throw Error('invalid_field');
     if(v.trim()) {
-      if(k==='callbackUrl') { let url;try{url=new URL(v.trim());}catch{throw Error('invalid_callback_url');}if(url.protocol!=='https:'||url.username||url.password)throw Error('invalid_callback_url'); }
+      if(k==='callbackUrl'||k==='rpcUrl') { let url;try{url=new URL(v.trim());}catch{throw Error('invalid_endpoint_url');}if(url.protocol!=='https:'||url.username||url.password)throw Error('invalid_endpoint_url'); }
       clean[k]=v.trim();
     }
   }
