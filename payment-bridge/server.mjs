@@ -7,6 +7,8 @@ import { verifyHeleket, transition } from './heleket-webhook.mjs';
 import { authCreator, creatorEntitlements } from './creator-api.mjs';
 import { shopRoute } from './shop-routes.mjs';
 import { validId } from './shop.mjs';
+import { creatorFeatureRoute } from './creator-features-routes.mjs';
+import { supporterEntitlements,codeHash,discountPrice } from './creator-features.mjs';
 
 const port = Number(process.env.BRIDGE_PORT || 8091);
 const host = process.env.BRIDGE_HOST || '127.0.0.1';
@@ -18,7 +20,7 @@ const callbackUrl = process.env.HELEKET_CALLBACK_URL || '';
 const amountPattern = /^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/;
 const codePattern = /^[A-Z]{3,10}$/;
 const invoiceIdPattern = /^[0-9a-f-]{36}$/i;
-let state = { invoices: {}, products: {}, assets: {}, vrchat: {} };
+let state = { invoices: {}, products: {}, assets: {}, vrchat: {}, posts: {}, gifts: {}, discounts: {} };
 let writeQueue = Promise.resolve();
 
 export function validAmount(value) {
@@ -65,6 +67,7 @@ export async function handler(req,res) {
     res.end(html);return;
   }
   if (await shopRoute(req,res,url,{state,persist,dbPath,admin:authorised(req.headers.authorization,apiToken)})) return;
+  if (await creatorFeatureRoute(req,res,url,{state,persist,admin:authorised(req.headers.authorization,apiToken),project:authCreator(req.headers.authorization)})) return;
   // Public callback authenticates via Heleket's documented signed payload, not the bridge API bearer token.
   if (req.method==='POST' && url.pathname==='/webhooks/heleket') {
     let event;
@@ -90,7 +93,7 @@ export async function handler(req,res) {
     if(!principal || !principal.scopes.includes('entitlements:read')) return send(res,403,{error:'missing_creator_scope'});
     const match=url.pathname.match(new RegExp('^/v1/creator/patrons/([a-zA-Z0-9_-]{1,128})/entitlements$'));
     if(!match) return send(res,404,{error:'not_found'});
-    return send(res,200,creatorEntitlements(state.invoices,principal.creatorId,match[1]));
+    return send(res,200,supporterEntitlements(state.invoices,state.gifts||{},principal.creatorId,match[1]));
   }
   if (!authorised(req.headers.authorization,apiToken)) return send(res,401,{error:'unauthorised'});
   if (req.method==='GET' && url.pathname==='/v1/providers') {
@@ -111,13 +114,22 @@ export async function handler(req,res) {
   if (req.method==='POST' && url.pathname==='/v1/invoices') {
     let data;
     try { data=await bodyJSON(req); } catch { return send(res,400,{error:'invalid_json_or_too_large'}); }
-    let {provider,patronId,amount,currency='USD',creatorId,tierId,productId=null} = data || {};
+    let {provider,patronId,amount,currency='USD',creatorId,tierId,productId=null,discountCode=null} = data || {};
+    let discountHash=null,catalogPrice=null;
     if(productId!==null) {
       if(!validId(productId)) return send(res,400,{error:'invalid_product'});
       const product=state.products?.[productId];
       if(!product||!product.published||product.creatorId!==creatorId) return send(res,404,{error:'product_not_found'});
       // Price and currency must be taken from server-controlled catalog, never from a customer.
-      amount=product.price;currency=product.currency;
+      amount=product.price;currency=product.currency;catalogPrice=product.price;
+      if(discountCode!==null) {
+        if(typeof discountCode!=='string'||discountCode.length>64) return send(res,400,{error:'invalid_discount'});
+        discountHash=codeHash(discountCode);
+        const paidCount=Object.values(state.invoices).filter(i=>i.discountHash===discountHash&&i.status==='paid').length;
+        const reduced=discountPrice(state.discounts?.[discountHash],product,paidCount);
+        if(!reduced) return send(res,422,{error:'invalid_or_expired_discount'});
+        amount=reduced;
+      }
       tierId=product.requiredTierId||'shop';
     }
     if (provider !== 'heleket') return send(res,422,{error:'provider_not_implemented'});
@@ -140,7 +152,7 @@ export async function handler(req,res) {
     if (!checkout || checkout.protocol!=='https:' || checkout.hostname!=='pay.heleket.com') {
       return send(res,502,{error:'invalid_provider_redirect'});
     }
-    state.invoices[id]={id,patronId,creatorId,tierId,productId,provider,amount,currency,orderId,providerReference:invoice.uuid||invoice.result?.uuid||null,status:'pending',checkoutUrl,createdAt:new Date().toISOString()};
+    state.invoices[id]={id,patronId,creatorId,tierId,productId,discountHash,catalogPrice,provider,amount,currency,orderId,providerReference:invoice.uuid||invoice.result?.uuid||null,status:'pending',checkoutUrl,createdAt:new Date().toISOString()};
     try { await persist(); } catch { delete state.invoices[id]; return send(res,500,{error:'invoice_persistence_failed'}); }
     return send(res,201,publicInvoice(state.invoices[id]));
   }
