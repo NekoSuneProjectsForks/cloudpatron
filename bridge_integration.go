@@ -198,3 +198,31 @@ func redeemGiftPage(w http.ResponseWriter,r *http.Request,ps httprouter.Params){
   }
   fmt.Fprint(w,`</main></body></html>`)
 }
+
+func bridgeWebhookProxy(w http.ResponseWriter,r *http.Request,_ httprouter.Params){
+  // The bridge validates Heleket's signature; preserve request body byte-for-byte.
+  payload,err:=io.ReadAll(io.LimitReader(r.Body,16385))
+  if err!=nil||len(payload)>16384{bridgeError(w,413,"webhook_too_large");return}
+  req,err:=http.NewRequest("POST",bridgeBase()+"/webhooks/heleket",bytes.NewReader(payload))
+  if err!=nil{bridgeError(w,500,"invalid_webhook");return}
+  req.Header.Set("Content-Type","application/json")
+  response,err:=bridgeClient.Do(req)
+  if err!=nil{bridgeError(w,502,"bridge_unavailable");return}
+  defer response.Body.Close()
+  data,_:=io.ReadAll(io.LimitReader(response.Body,16384))
+  bridgeJSON(w,response.StatusCode,data)
+}
+func bridgeDownloadProxy(w http.ResponseWriter,r *http.Request,ps httprouter.Params){
+  path:=ps.ByName("path")
+  if len(path)<10||len(path)>4096||strings.Contains(path,".."){http.NotFound(w,r);return}
+  req,err:=http.NewRequest("GET",bridgeBase()+"/v1/downloads"+path,nil)
+  if err!=nil{http.NotFound(w,r);return}
+  response,err:=bridgeClient.Do(req)
+  if err!=nil{bridgeError(w,502,"bridge_unavailable");return}
+  defer response.Body.Close()
+  for _,header:=range []string{"Content-Type","Content-Disposition","Content-Length","Cache-Control","X-Content-Type-Options"}{
+    if value:=response.Header.Get(header);value!=""{w.Header().Set(header,value)}
+  }
+  w.WriteHeader(response.StatusCode)
+  io.Copy(w,io.LimitReader(response.Body,26*1024*1024))
+}
