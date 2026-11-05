@@ -228,6 +228,8 @@ func main() {
 	r.GET("/creator-session", bridgeSessionAPI)
 	r.GET("/patron-session", bridgeSessionAPI)
 	r.GET("/v1/public/*path", bridgePublicProxy)
+	r.POST("/webhooks/heleket", bridgeWebhookProxy)
+	r.GET("/v1/downloads/*path", bridgeDownloadProxy)
 	r.GET("/creator-api/*path", creatorAdminProxy)
 	r.POST("/creator-api/*path", creatorAdminProxy)
 	r.POST("/checkout", bridgeCheckout)
