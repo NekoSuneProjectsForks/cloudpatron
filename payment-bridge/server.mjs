@@ -59,6 +59,11 @@ function publicInvoice(item) {
 export async function handler(req,res) {
   if (req.url === '/health' && req.method === 'GET') return send(res,200,{ok:true});
   const url = new URL(req.url,'http://localhost');
+  if (req.method==='GET' && (url.pathname==='/shop'||url.pathname==='/shop/')) {
+    const html=await readFile(new URL('./storefront.html',import.meta.url),'utf8');
+    res.writeHead(200,{'content-type':'text/html; charset=utf-8','cache-control':'no-store','content-security-policy':"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-src https://www.youtube-nocookie.com; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",'x-content-type-options':'nosniff'});
+    res.end(html);return;
+  }
   if (await shopRoute(req,res,url,{state,persist,dbPath,admin:authorised(req.headers.authorization,apiToken)})) return;
   // Public callback authenticates via Heleket's documented signed payload, not the bridge API bearer token.
   if (req.method==='POST' && url.pathname==='/webhooks/heleket') {
