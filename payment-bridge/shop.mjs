@@ -37,7 +37,7 @@ export function ownsProduct(invoices,product,patronId,now=Date.now()) {
   if(!product||!validId(patronId)) return false;
   return Object.values(invoices).some(i=>{
     if(i.patronId!==patronId||i.creatorId!==product.creatorId||i.productId!==product.id||i.status!=='paid') return false;
-    if(i.amount!==product.price || i.currency!==product.currency) return false;
+    if(i.currency!==product.currency || (i.catalogPrice||i.amount)!==product.price) return false;
     if(product.billing==='one_time') return true;
     const paidAt=Date.parse(i.paidAt||'');
     return Number.isFinite(paidAt) && now<paidAt+30*86400000;
