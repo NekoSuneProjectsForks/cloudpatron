@@ -3,6 +3,7 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { PROVIDERS } from './providers.mjs';
+import { GatewayVault } from './gateway-vault.mjs';
 import { verifyHeleket, transition } from './heleket-webhook.mjs';
 import { authCreator, creatorEntitlements } from './creator-api.mjs';
 import { shopRoute } from './shop-routes.mjs';
@@ -14,8 +15,8 @@ const port = Number(process.env.BRIDGE_PORT || 8091);
 const host = process.env.BRIDGE_HOST || '127.0.0.1';
 const dbPath = resolve(process.env.BRIDGE_DATA_FILE || './data/invoices.json');
 const apiToken = process.env.BRIDGE_API_TOKEN || '';
-const merchantId = process.env.HELEKET_MERCHANT_ID || '';
-const paymentKey = process.env.HELEKET_PAYMENT_KEY || '';
+const vault = new GatewayVault(process.env.GATEWAY_VAULT_FILE || resolve(dirname(dbPath),'gateways.enc.json'));
+const heleketCredentials = () => ({merchantId: vault.get('heleket')?.merchantId || process.env.HELEKET_MERCHANT_ID || '', paymentKey: vault.get('heleket')?.paymentKey || process.env.HELEKET_PAYMENT_KEY || ''});
 const callbackUrl = process.env.HELEKET_CALLBACK_URL || '';
 const amountPattern = /^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/;
 const codePattern = /^[A-Z]{3,10}$/;
@@ -77,7 +78,7 @@ export async function handler(req,res) {
   if (req.method==='POST' && url.pathname==='/webhooks/heleket') {
     let event;
     try { event=await bodyJSON(req); } catch { return send(res,400,{error:'invalid_json_or_too_large'}); }
-    if(!verifyHeleket(event,paymentKey)) return send(res,401,{error:'invalid_signature'});
+    if(!verifyHeleket(event,heleketCredentials().paymentKey)) return send(res,401,{error:'invalid_signature'});
     const invoice=Object.values(state.invoices).find(i=>i.provider==='heleket' && i.orderId===event.order_id);
     if(!invoice) return send(res,404,{error:'unknown_order'});
     const result=transition(invoice,event);
@@ -101,6 +102,14 @@ export async function handler(req,res) {
     return send(res,200,supporterEntitlements(state.invoices,state.gifts||{},principal.creatorId,match[1]));
   }
   if (!authorised(req.headers.authorization,apiToken)) return send(res,401,{error:'unauthorised'});
+  if(req.method==='GET' && url.pathname==='/v1/admin/gateways') return send(res,200,{gateways:vault.list()});
+  if(req.method==='POST' && url.pathname.startsWith('/v1/admin/gateways/')) {
+    const id=url.pathname.slice('/v1/admin/gateways/'.length);
+    let values;
+    try { values=await bodyJSON(req); } catch { return send(res,400,{error:'invalid_json'}); }
+    try { const gateway=await vault.update(id,values?.values||{},values?.remove||[]);return send(res,200,{gateway}); }
+    catch(err){ return send(res,400,{error:err.message==='unsupported_gateway'||err.message==='invalid_values'||err.message==='invalid_field'||err.message==='invalid_remove_fields'?err.message:'configuration_save_failed'}); }
+  }
   if (req.method==='GET' && url.pathname==='/v1/providers') {
     return send(res,200,{providers:PROVIDERS});
   }
@@ -141,6 +150,7 @@ export async function handler(req,res) {
     if (!/^[a-zA-Z0-9_-]{1,128}$/.test(patronId||'') || !/^[a-zA-Z0-9_-]{1,128}$/.test(creatorId||'') || !/^[a-zA-Z0-9_-]{1,128}$/.test(tierId||'') || !validAmount(amount) || !codePattern.test(currency)) {
       return send(res,400,{error:'invalid_invoice_parameters'});
     }
+    const {merchantId,paymentKey}=heleketCredentials();
     if (!merchantId || !paymentKey) return send(res,503,{error:'heleket_not_configured'});
     const id = randomUUID();
     const orderId = 'cp_' + id.replaceAll('-','').slice(0,28);
@@ -166,6 +176,7 @@ export async function handler(req,res) {
 
 async function start() {
   if (!apiToken || apiToken.length < 32) throw new Error('BRIDGE_API_TOKEN must be at least 32 characters');
+  await vault.init();
   try {
     const data=JSON.parse(await readFile(dbPath,'utf8'));
     if (data && typeof data.invoices==='object' && !Array.isArray(data.invoices)) state=data;
